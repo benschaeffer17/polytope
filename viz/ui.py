@@ -1,6 +1,41 @@
 
 import glfw
 from OpenGL.GL import *
+from OpenGL.GLUT import *
+
+class HeadsUpDisplay:
+    def __init__(self, window):
+        self.window = window
+
+    def draw(self, nav_state):
+        glDisable(GL_LIGHTING)
+        glDisable(GL_DEPTH_TEST)
+        glDepthMask(GL_FALSE)
+
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        width, height = glfw.get_window_size(self.window)
+        glOrtho(0, width, 0, height, -1, 1)
+
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+
+        glColor3f(1.0, 1.0, 1.0)
+        glRasterPos2i(10, height - 30)
+        for character in nav_state:
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, ord(character))
+
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
+
+        glDepthMask(GL_TRUE)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_LIGHTING)
+
 
 class UserInterface:
     def __init__(self, title="Polytope Visualizer", width=800, height=600):
@@ -19,6 +54,9 @@ class UserInterface:
         self.mouse_button_callbacks = {}
         self.cursor_pos_callback = None
         self.draw_func = None
+        self.frame_count = 0
+        self.last_time = glfw.get_time()
+        self.fps = 0
 
         glfw.set_key_callback(self.window, self._key_callback)
         glfw.set_mouse_button_callback(self.window, self._mouse_button_callback)
@@ -61,6 +99,13 @@ class UserInterface:
             
             if self.draw_func:
                 self.draw_func()
+
+            self.frame_count += 1
+            current_time = glfw.get_time()
+            if current_time - self.last_time >= 1.0:
+                self.fps = self.frame_count
+                self.frame_count = 0
+                self.last_time = current_time
 
             glfw.swap_buffers(self.window)
             glfw.poll_events()

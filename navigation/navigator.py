@@ -47,14 +47,14 @@ class Navigator:
                 return
 
             angle = np.arccos(np.dot(start_vec, end_vec))
-            axis = np.cross(start_vec, end_vec)
+            axis = np.cross(end_vec, start_vec)
             
             if np.linalg.norm(axis) > 1e-6:
                 axis = axis / np.linalg.norm(axis)
                 
                 q_delta = np.array([np.cos(angle / 2.0), *(np.sin(angle / 2.0) * axis)])
                 
-                self.rotation = self.quaternion_multiply(q_delta, self.rotation)
+                self.rotation = self.quaternion_multiply(self.rotation, q_delta)
                 self.normalize_quaternion()
 
             self.last_mouse_pos = (xpos, ypos)

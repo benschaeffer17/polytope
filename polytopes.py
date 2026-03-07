@@ -30,19 +30,13 @@ def get_24_cell():
             
     return vertices, edges
 
-def project_4d_to_3d(vertices, angle_4d=0):
+def project_4d_to_3d(vertices, rotation_matrix=None):
     """
-    Projects 4D vertices to 3D using a rotation in the xw plane.
+    Projects 4D vertices to 3D after applying a rotation.
     """
-    
-    # Rotation matrix for the 4th dimension
-    rotation_matrix = np.array([
-        [np.cos(angle_4d), 0, 0, -np.sin(angle_4d)],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [np.sin(angle_4d), 0, 0, np.cos(angle_4d)]
-    ])
-    
+    if rotation_matrix is None:
+        rotation_matrix = np.identity(4)
+
     rotated_vertices = vertices @ rotation_matrix.T
     
     projected_vertices = []
