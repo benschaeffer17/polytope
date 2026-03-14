@@ -93,12 +93,15 @@ class UserInterface:
     def close_window(self, *args):
         glfw.set_window_should_close(self.window, True)
 
-    def run(self):
+    def run(self, app=None):
         while not glfw.window_should_close(self.window):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             
             if self.draw_func:
-                self.draw_func()
+                if app and app.recording:
+                    self.draw_func()
+                else:
+                    self.draw_func()
 
             self.frame_count += 1
             current_time = glfw.get_time()

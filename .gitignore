@@ -63,3 +63,5 @@ target/
 .Trashes
 ehthumbs.db
 Thumbs.db
+polymovie/
+*.mp4

@@ -4,6 +4,8 @@ from OpenGL.GL import *
 import numpy as np
 import sys
 from OpenGL.GLUT import glutInit
+import os
+from PIL import Image
 
 from viz.ui import UserInterface, HeadsUpDisplay
 from navigation.navigator import Navigator
@@ -28,8 +30,13 @@ class App:
         self.rotation_speed_level = 3
         self.base_rotation_speed = 0.001
         self.last_frame_time = 0.0
+        self.recording = False
+        self.frame_idx = 0
+        self.movie_dir = "polymovie"
+
 
         self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
+        self.ui.register_keyboard_callback(glfw.KEY_P, self.toggle_recording)
         self.ui.register_keyboard_callback(glfw.KEY_1, lambda *args: self.set_rotation_plane(0))
         self.ui.register_keyboard_callback(glfw.KEY_2, lambda *args: self.set_rotation_plane(1))
         self.ui.register_keyboard_callback(glfw.KEY_3, lambda *args: self.set_rotation_plane(2))
@@ -132,6 +139,25 @@ class App:
 
     def toggle_style(self, *args):
         self.style.toggle_style()
+    
+    def toggle_recording(self, *args):
+        self.recording = not self.recording
+        if self.recording:
+            self.frame_idx = 0
+            if not os.path.exists(self.movie_dir):
+                os.makedirs(self.movie_dir)
+            else:
+                for f in os.listdir(self.movie_dir):
+                    os.remove(os.path.join(self.movie_dir, f))
+
+    def capture_frame(self):
+        width, height = glfw.get_framebuffer_size(self.ui.window)
+        glReadBuffer(GL_BACK)
+        pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
+        image = Image.frombytes("RGB", (width, height), pixels)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        image.save(os.path.join(self.movie_dir, f"frame_{self.frame_idx:04d}.jpg"), "JPEG", quality=90)
+        self.frame_idx += 1
 
     def draw(self):
         current_time = glfw.get_time()
@@ -139,6 +165,10 @@ class App:
             delta_time = 0.0
         else:
             delta_time = current_time - self.last_frame_time
+        
+        if self.recording:
+            delta_time = 1.0 / 60.0
+
         self.last_frame_time = current_time
 
         # Set projection matrix
@@ -183,6 +213,14 @@ class App:
         
         glPopMatrix()
 
+        # Slowly rotate in 4D
+        if self.rotation_speed_level > 0:
+            speed_factor = 1.5 ** (self.rotation_speed_level - 3)
+            self.angle_4d += self.base_rotation_speed * speed_factor * delta_time * 100.0
+
+        if self.recording:
+            self.capture_frame()
+
         # Draw the heads-up display
         if self.style.line_style.style == LineStyle.LINE:
             render_mode = "Wireframe"
@@ -190,12 +228,13 @@ class App:
             render_mode = "Cylinders"
         
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
-        self.hud.draw(f"Render: {render_mode} | Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps}")
         
-        # Slowly rotate in 4D
-        if self.rotation_speed_level > 0:
-            speed_factor = 1.5 ** (self.rotation_speed_level - 3)
-            self.angle_4d += self.base_rotation_speed * speed_factor * delta_time * 100.0
+        if self.recording:
+            capture_status = f"recording ({self.frame_idx:04d})"
+        else:
+            capture_status = "stopped"
+
+        self.hud.draw(f"Render: {render_mode} | Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}")
 
     def run(self):
         # Initial OpenGL setup
@@ -207,7 +246,7 @@ class App:
         glEnable(GL_COLOR_MATERIAL)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         
-        self.ui.run()
+        self.ui.run(self)
 
 if __name__ == '__main__':
     glutInit(sys.argv)
