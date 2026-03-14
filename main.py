@@ -7,7 +7,8 @@ from OpenGL.GLUT import glutInit
 import os
 from PIL import Image
 
-from viz.ui import UserInterface, HeadsUpDisplay
+from widgets.ui import UserInterface, HeadsUpDisplay
+from widgets.capture import Capture
 from navigation.navigator import Navigator
 from navigation.rotator import Rotator
 from polytopes import get_24_cell, project_4d_to_3d
@@ -20,6 +21,7 @@ class App:
         self.nav = Navigator(self.ui)
         self.hud = HeadsUpDisplay(self.ui.window)
         self.rotator = Rotator()
+        self.capture = Capture(self.ui.window)
         self.ui.register_draw_function(self.draw)
         
         self.vertices_4d, self.edges = get_24_cell()
@@ -30,13 +32,9 @@ class App:
         self.rotation_speed_level = 3
         self.base_rotation_speed = 0.001
         self.last_frame_time = 0.0
-        self.recording = False
-        self.frame_idx = 0
-        self.movie_dir = "polymovie"
-
 
         self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
-        self.ui.register_keyboard_callback(glfw.KEY_P, self.toggle_recording)
+        self.ui.register_keyboard_callback(glfw.KEY_P, self.capture.toggle_recording)
         self.ui.register_keyboard_callback(glfw.KEY_1, lambda *args: self.set_rotation_plane(0))
         self.ui.register_keyboard_callback(glfw.KEY_2, lambda *args: self.set_rotation_plane(1))
         self.ui.register_keyboard_callback(glfw.KEY_3, lambda *args: self.set_rotation_plane(2))
@@ -140,25 +138,6 @@ class App:
     def toggle_style(self, *args):
         self.style.toggle_style()
     
-    def toggle_recording(self, *args):
-        self.recording = not self.recording
-        if self.recording:
-            self.frame_idx = 0
-            if not os.path.exists(self.movie_dir):
-                os.makedirs(self.movie_dir)
-            else:
-                for f in os.listdir(self.movie_dir):
-                    os.remove(os.path.join(self.movie_dir, f))
-
-    def capture_frame(self):
-        width, height = glfw.get_framebuffer_size(self.ui.window)
-        glReadBuffer(GL_BACK)
-        pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
-        image = Image.frombytes("RGB", (width, height), pixels)
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        image.save(os.path.join(self.movie_dir, f"frame_{self.frame_idx:04d}.jpg"), "JPEG", quality=90)
-        self.frame_idx += 1
-
     def draw(self):
         current_time = glfw.get_time()
         if self.last_frame_time == 0.0:
@@ -166,7 +145,7 @@ class App:
         else:
             delta_time = current_time - self.last_frame_time
         
-        if self.recording:
+        if self.capture.recording:
             delta_time = 1.0 / 60.0
 
         self.last_frame_time = current_time
@@ -218,8 +197,8 @@ class App:
             speed_factor = 1.5 ** (self.rotation_speed_level - 3)
             self.angle_4d += self.base_rotation_speed * speed_factor * delta_time * 100.0
 
-        if self.recording:
-            self.capture_frame()
+        if self.capture.recording:
+            self.capture.capture_frame()
 
         # Draw the heads-up display
         if self.style.line_style.style == LineStyle.LINE:
@@ -229,8 +208,8 @@ class App:
         
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         
-        if self.recording:
-            capture_status = f"recording ({self.frame_idx:04d})"
+        if self.capture.recording:
+            capture_status = f"recording ({self.capture.frame_idx:04d})"
         else:
             capture_status = "stopped"
 

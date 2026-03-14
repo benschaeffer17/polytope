@@ -95,7 +95,9 @@ class Navigator:
         glMultMatrixf(self.get_rotation_matrix())
 
 if __name__ == '__main__':
-    from ui import UserInterface
+    import sys
+    sys.path.append('..')
+    from widgets.ui import UserInterface
 
     class App:
         def __init__(self):

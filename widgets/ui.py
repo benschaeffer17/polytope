@@ -98,7 +98,7 @@ class UserInterface:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             
             if self.draw_func:
-                if app and app.recording:
+                if app and app.capture.recording:
                     self.draw_func()
                 else:
                     self.draw_func()
