@@ -27,8 +27,9 @@ The 24-cell will also slowly rotate in 4D on its own.
 
 ## Project Structure
 
--   `polytope/main.py`: The main script that runs the application.
--   `polytope/viz/ui.py`: The `UserInterface` class for windowing and event handling.
--   `polytope/navigation/navigator.py`: The `Navigator` class for handling 3D rotation via mouse input.
--   `polytope/polytopes.py`: Contains the code to generate the 24-cell and project it from 4D to 3D.
--   `polytope/requirements.txt`: The python dependencies.
+-   `main.py`: The main script that runs the application.
+-   `viz/ui.py`: The `UserInterface` class for windowing and event handling.
+-   `navigation/navigator.py`: The `Navigator` class for handling 3D rotation via mouse input.
+-   `polytopes.py`: Contains the code to generate the 24-cell and project it from 4D to 3D.
+-   `widgets/capture.py`: Contains the code for capturing frames of the visualization.
+-   `requirements.txt`: The python dependencies.

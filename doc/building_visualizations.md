@@ -11,6 +11,7 @@ The visualization system is built around a few core components:
 *   **Polytope Data**: Functions like `get_24_cell` provide the 4D vertex and edge data for the polytopes.
 *   **Projection**: The `project_4d_to_3d` function projects the 4D data into 3D space that can be rendered.
 *   **Drawing**: The `draw` function in `viz.drawing` handles the actual OpenGL rendering of the points and lines.
+*   **Widgets**: The `widgets` directory contains additional components that can be added to the visualization, such as a frame capture tool.
 
 ## Steps to Build a Visualization
 
@@ -41,12 +42,14 @@ In the `__init__` method of your `App` class, you should:
 *   Register your `draw` method with the `UserInterface` instance.
 *   Load your polytope data (e.g., using `get_24_cell`).
 *   Initialize a `Style` object to control the visual appearance.
+*   Initialize any desired widgets, such as the `Capture` widget.
 
 ```python
 from viz.ui import UserInterface
 from navigation.navigator import Navigator
 from polytopes import get_24_cell
 from viz.style import Style
+from widgets.capture import Capture
 
 class App:
     def __init__(self):
@@ -56,6 +59,7 @@ class App:
         
         self.vertices_4d, self.edges = get_24_cell()
         self.style = Style()
+        self.capture = Capture(self.ui)
 ```
 
 ### 3. Implement the `draw` method
@@ -124,4 +128,4 @@ self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
 def toggle_style(self, *args):
     self.style.toggle_style()
 ```
-Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders.
+Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders. You can also use widgets to add functionality. For example, the `Capture` widget saves a screenshot when the `C` key is pressed.
