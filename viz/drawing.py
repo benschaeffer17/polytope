@@ -10,7 +10,7 @@ quad = gluNewQuadric()
 def draw_cylinder(p1, p2, radius, slices=16):
     v = p2 - p1
     mag = np.linalg.norm(v)
-    if mag < 1e-6:
+    if mag < 1e-9: # A very small constant
         return
 
     v = v / mag
@@ -28,7 +28,11 @@ def draw_cylinder(p1, p2, radius, slices=16):
     glPushMatrix()
     glTranslatef(p1[0], p1[1], p1[2])
     
-    if np.linalg.norm(rot_axis) > 1e-6:
+    # If the vector is anti-parallel to the axis, the cross product is zero.
+    # In this case, we need to choose an arbitrary rotation axis.
+    if dot_product < -0.99999:
+        glRotatef(180, 1.0, 0.0, 0.0) # Rotate 180 degrees around x-axis
+    elif np.linalg.norm(rot_axis) > 1e-6:
         glRotatef(angle, rot_axis[0], rot_axis[1], rot_axis[2])
     
     gluCylinder(quad, radius, radius, mag, slices, 1)
@@ -72,7 +76,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
         glPointSize(style.point_style.size * 3)
         glBegin(GL_POINTS)
         for i in fixed_vertices_indices:
-            glColor3f(1.0, 1.0, 1.0) # White
+            glColor3fv(colors[i])
             glVertex3fv(vertices[i])
         glEnd()
 
@@ -84,7 +88,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
 
             if i in fixed_vertices_indices:
                 radius = default_radius * 3
-                color = [1.0, 1.0, 1.0] # White
+                color = colors[i]
             else:
                 radius = default_radius
                 color = colors[i]

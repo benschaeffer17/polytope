@@ -29,15 +29,15 @@ class App:
         self.ui.register_draw_function(self.draw)
         
         self.shape_name = '24-cell'
+        self.style = Style()
         self.load_shape()
         
         self.angle_4d = 0.0
-        
-        self.style = Style()
         self.rotation_plane = 0 # Default to xy plane
         self.rotation_speed_level = 3
         self.base_rotation_speed = 0.001
         self.last_frame_time = 0.0
+
 
         self.default_camera_distance = 2.0
         self.camera_distance = self.default_camera_distance
@@ -52,6 +52,7 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_5, lambda *args: self.set_rotation_plane(4))
         self.ui.register_keyboard_callback(glfw.KEY_6, lambda *args: self.set_rotation_plane(5))
         self.ui.register_keyboard_callback(glfw.KEY_A, self.increase_rotation_speed)
+
         self.ui.register_keyboard_callback(glfw.KEY_Z, self.decrease_rotation_speed)
         self.ui.register_keyboard_callback(glfw.KEY_K, self.zoom_out)
         self.ui.register_keyboard_callback(glfw.KEY_M, self.zoom_in)
@@ -69,10 +70,16 @@ class App:
     def load_shape(self):
         if self.shape_name == '24-cell':
             self.vertices_4d, self.edges = get_24_cell()
+            self.style.point_style.relative_size = 1.0
+            self.style.line_style.relative_width = 0.45
         elif self.shape_name == '120-cell':
             self.vertices_4d, self.edges = get_120_cell()
+            self.style.point_style.relative_size = 0.33
+            self.style.line_style.relative_width = 0.15
         elif self.shape_name == '600-cell':
             self.vertices_4d, self.edges = get_600_cell()
+            self.style.point_style.relative_size = 0.5
+            self.style.line_style.relative_width = 0.15
         self.setup_coloring()
 
     def toggle_shape(self, *args):
@@ -213,7 +220,7 @@ class App:
         fixed_vertices_indices = {i for i, v in enumerate(self.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
 
         projected_vertices = project_4d_to_3d(self.vertices_4d, rotation_matrix)
-        drawing.draw(projected_vertices, self.edges, self.colors, self.style, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.edge_colors)
+        drawing.draw(projected_vertices, self.edges, self.colors, self.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.edge_colors)
         
         glPopMatrix()
 

@@ -4,7 +4,7 @@ class PointStyle:
     POINT = 1
     SPHERE = 2
 
-    def __init__(self, style=POINT, size=5.0, relative_size=0.3):
+    def __init__(self, style=POINT, size=20.0, relative_size=1.2):
         self.style = style
         self.size = size # for POINT style
         self.relative_size = relative_size # for SPHERE style
