@@ -11,9 +11,14 @@ from widgets.ui import UserInterface, HeadsUpDisplay
 from widgets.capture import Capture
 from navigation.navigator import Navigator
 from navigation.rotator import Rotator
-from polytopes import get_24_cell, get_120_cell, get_600_cell, project_4d_to_3d
-from viz.style import Style, LineStyle
+from polytopes import project_4d_to_3d
+from viz.style import LineStyle
 import viz.drawing as drawing
+from models import (
+    Cell24Model,
+    Cell120Model,
+    Cell600Model
+)
 
 class App:
     ZOOM_FACTOR = 1.2
@@ -29,7 +34,7 @@ class App:
         self.ui.register_draw_function(self.draw)
         
         self.shape_name = '24-cell'
-        self.style = Style()
+        self.model = None
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -42,7 +47,7 @@ class App:
         self.default_camera_distance = 2.0
         self.camera_distance = self.default_camera_distance
 
-        self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
+        self.ui.register_keyboard_callback(glfw.KEY_V, lambda *args: self.model.style.toggle_style())
         self.ui.register_keyboard_callback(glfw.KEY_T, self.toggle_shape)
         self.ui.register_keyboard_callback(glfw.KEY_P, self.capture.toggle_recording)
         self.ui.register_keyboard_callback(glfw.KEY_1, lambda *args: self.set_rotation_plane(0))
@@ -69,18 +74,11 @@ class App:
 
     def load_shape(self):
         if self.shape_name == '24-cell':
-            self.vertices_4d, self.edges = get_24_cell()
-            self.style.point_style.relative_size = 1.0
-            self.style.line_style.relative_width = 0.45
+            self.model = Cell24Model()
         elif self.shape_name == '120-cell':
-            self.vertices_4d, self.edges = get_120_cell()
-            self.style.point_style.relative_size = 0.33
-            self.style.line_style.relative_width = 0.15
+            self.model = Cell120Model()
         elif self.shape_name == '600-cell':
-            self.vertices_4d, self.edges = get_600_cell()
-            self.style.point_style.relative_size = 0.5
-            self.style.line_style.relative_width = 0.15
-        self.setup_coloring()
+            self.model = Cell600Model()
 
     def toggle_shape(self, *args):
         if self.shape_name == '24-cell':
@@ -91,91 +89,6 @@ class App:
             self.shape_name = '24-cell'
         self.load_shape()
 
-    def setup_coloring(self):
-        if self.shape_name == '24-cell':
-            # Vertex and Edge coloring based on 24-cell geometry
-            v_inner_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == -1}
-            v_middle_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 0}
-            v_outer_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 1}
-
-            # --- Set Vertex Colors ---
-            cyan = [0.0, 1.0, 1.0]
-            orange = [1.0, 0.65, 0.0]
-            pale_red = [1.0, 0.5, 0.5]
-            self.colors = []
-            for i in range(len(self.vertices_4d)):
-                if i in v_inner_indices:
-                    self.colors.append(cyan)
-                elif i in v_middle_indices:
-                    self.colors.append(orange)
-                else: # outer
-                    self.colors.append(pale_red)
-            self.colors = np.array(self.colors, dtype=np.float32)
-
-            # --- Set Edge Colors and Widths ---
-            self.edge_colors = []
-            self.edge_width_multipliers = []
-            
-            green = [0.0, 1.0, 0.0]
-            red = [1.0, 0.0, 0.0]
-            blue = [0.0, 0.0, 1.0]
-            yellow = [1.0, 1.0, 0.0]
-            purple = [1.0, 0.0, 1.0]
-
-            width_multipliers = {
-                "red": 1.2, "green": 1.15, "blue": 1.1,
-                "yellow": 1.05, "purple": 1.0
-            }
-
-            for i, j in self.edges:
-                is_i_inner = i in v_inner_indices
-                is_i_middle = i in v_middle_indices
-                is_i_outer = i in v_outer_indices
-                is_j_inner = j in v_inner_indices
-                is_j_middle = j in v_middle_indices
-                is_j_outer = j in v_outer_indices
-
-                if is_i_inner and is_j_inner:
-                    self.edge_colors.append(green)
-                    self.edge_width_multipliers.append(width_multipliers["green"])
-                elif (is_i_inner and is_j_middle) or (is_i_middle and is_j_inner):
-                    self.edge_colors.append(red)
-                    self.edge_width_multipliers.append(width_multipliers["red"])
-                elif is_i_middle and is_j_middle:
-                    self.edge_colors.append(blue)
-                    self.edge_width_multipliers.append(width_multipliers["blue"])
-                elif (is_i_middle and is_j_outer) or (is_i_outer and is_j_middle):
-                    self.edge_colors.append(yellow)
-                    self.edge_width_multipliers.append(width_multipliers["yellow"])
-                elif is_i_outer and is_j_outer:
-                    self.edge_colors.append(purple)
-                    self.edge_width_multipliers.append(width_multipliers["purple"])
-                else:
-                    self.edge_colors.append([1.0, 1.0, 1.0])
-                    self.edge_width_multipliers.append(1.0)
-            
-            self.edge_colors = np.array(self.edge_colors, dtype=np.float32)
-            self.edge_width_multipliers = np.array(self.edge_width_multipliers, dtype=np.float32)
-        elif self.shape_name == '600-cell':
-            red = [1.0, 0.0, 0.0]
-            blue = [0.0, 0.0, 1.0]
-            green = [0.0, 1.0, 0.0]
-            self.colors = []
-            for v in self.vertices_4d:
-                if np.sum(np.abs(v)) == 1.0: # 8 vertices
-                    self.colors.append(red)
-                elif np.all(np.abs(v) == 0.5): # 16 vertices
-                    self.colors.append(blue)
-                else: # 96 vertices
-                    self.colors.append(green)
-            self.colors = np.array(self.colors, dtype=np.float32)
-            self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
-            self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
-        else: # 120-cell
-            self.colors = np.array([[1.0, 1.0, 1.0]] * len(self.vertices_4d), dtype=np.float32)
-            self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
-            self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
-    
     def set_rotation_plane(self, plane_index):
         self.rotation_plane = plane_index
 
@@ -184,9 +97,6 @@ class App:
     def decrease_rotation_speed(self, *args):
         self.rotation_speed_level = max(0, self.rotation_speed_level - 1)
 
-    def toggle_style(self, *args):
-        self.style.toggle_style()
-    
     def draw(self):
         current_time = glfw.get_time()
         delta_time = (current_time - self.last_frame_time) if self.last_frame_time > 0 else 0.0
@@ -217,10 +127,10 @@ class App:
 
         rotation_matrix = self.rotator.get_rotation_matrix(self.rotation_plane, self.angle_4d)
         plane_indices = self.rotator.planes[self.rotation_plane]
-        fixed_vertices_indices = {i for i, v in enumerate(self.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
+        fixed_vertices_indices = {i for i, v in enumerate(self.model.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
 
-        projected_vertices = project_4d_to_3d(self.vertices_4d, rotation_matrix)
-        drawing.draw(projected_vertices, self.edges, self.colors, self.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.edge_colors)
+        projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix)
+        drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
         
         glPopMatrix()
 
@@ -230,7 +140,7 @@ class App:
         if self.capture.recording:
             self.capture.capture_frame()
 
-        render_mode = "Wireframe" if self.style.line_style.style == LineStyle.LINE else "Cylinders"
+        render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
         self.hud.draw(f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}")

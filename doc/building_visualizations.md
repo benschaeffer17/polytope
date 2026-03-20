@@ -8,10 +8,11 @@ The visualization system is built around a few core components:
 
 *   **`UserInterface`**: Creates the window and handles user input.
 *   **`Navigator`**: Handles 3D rotation of the scene with the mouse.
-*   **Polytope Data**: Functions like `get_24_cell` provide the 4D vertex and edge data for the polytopes.
+*   **`Rotator`**: Handles 4D rotation of the polytope.
+*   **`Model` Classes**: The `models` directory contains classes that represent the polytopes. These classes encapsulate the 4D vertex and edge data, as well as the coloring and styling information.
 *   **Projection**: The `project_4d_to_3d` function projects the 4D data into 3D space that can be rendered.
 *   **Drawing**: The `draw` function in `viz.drawing` handles the actual OpenGL rendering of the points and lines.
-*   **Widgets**: The `widgets` directory contains additional components that can be added to the visualization, such as a frame capture tool.
+*   **Widgets**: The `widgets` directory contains additional components that can be added to the visualization, such as a frame capture tool and a heads-up display.
 
 ## Steps to Build a Visualization
 
@@ -40,15 +41,13 @@ In the `__init__` method of your `App` class, you should:
 *   Create an instance of `UserInterface`.
 *   Create an instance of `Navigator`, passing it the `UserInterface` instance.
 *   Register your `draw` method with the `UserInterface` instance.
-*   Load your polytope data (e.g., using `get_24_cell`).
-*   Initialize a `Style` object to control the visual appearance.
+*   Create an instance of a `Model` subclass (e.g., `Cell24Model`).
 *   Initialize any desired widgets, such as the `Capture` widget.
 
 ```python
-from viz.ui import UserInterface
+from widgets.ui import UserInterface
 from navigation.navigator import Navigator
-from polytopes import get_24_cell
-from viz.style import Style
+from models import Cell24Model
 from widgets.capture import Capture
 
 class App:
@@ -57,8 +56,7 @@ class App:
         self.nav = Navigator(self.ui)
         self.ui.register_draw_function(self.draw)
         
-        self.vertices_4d, self.edges = get_24_cell()
-        self.style = Style()
+        self.model = Cell24Model()
         self.capture = Capture(self.ui)
 ```
 
@@ -80,10 +78,10 @@ from polytopes import project_4d_to_3d
         self.nav.apply_rotation()
         
         # Get projected 3D vertices
-        projected_vertices = project_4d_to_3d(self.vertices_4d, self.angle_4d)
+        projected_vertices = project_4d_to_3d(self.model.vertices_4d, self.angle_4d)
         
         # Draw the polytope
-        drawing.draw(projected_vertices, self.edges, self.colors, self.style)
+        drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style)
 ```
 
 ### 4. Implement the `run` method
@@ -118,7 +116,7 @@ if __name__ == '__main__':
 
 ## Customization
 
-You can customize the appearance of the visualization by modifying the `Style` object. For example, you can register a keyboard callback to toggle the drawing style:
+You can customize the appearance of the visualization by modifying the `Style` object on the `model`. For example, you can register a keyboard callback to toggle the drawing style:
 
 ```python
 # In __init__
@@ -126,6 +124,6 @@ self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
 
 # A new method in your App class
 def toggle_style(self, *args):
-    self.style.toggle_style()
+    self.model.style.toggle_style()
 ```
-Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders. You can also use widgets to add functionality. For example, the `Capture` widget saves a screenshot when the `C` key is pressed.
+Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders. You can also use widgets to add functionality. For example, the `Capture` widget saves a screenshot when a key is pressed.

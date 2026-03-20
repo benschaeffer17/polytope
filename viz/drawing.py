@@ -39,21 +39,8 @@ def draw_cylinder(p1, p2, radius, slices=16):
     glPopMatrix()
 
 
-def get_color_scale(color):
-    r, g, b = color
-    if r > 0.9 and g < 0.1 and b < 0.1: # Red
-        return 1.2
-    elif r < 0.1 and g > 0.9 and b < 0.1: # Green
-        return 1.15
-    elif r < 0.1 and g < 0.1 and b > 0.9: # Blue
-        return 1.1
-    elif r > 0.9 and g > 0.9 and b < 0.1: # Yellow
-        return 1.05
-    elif r > 0.9 and g < 0.1 and b > 0.9: # Purple
-        return 1.0
-    return 1.0
 
-def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_indices=None, edge_colors=None):
+def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_indices=None, edge_colors=None, edge_width_multipliers=None):
     if fixed_vertices_indices is None:
         fixed_vertices_indices = set()
 
@@ -101,18 +88,19 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
     if style.line_style.style == LineStyle.LINE:
         for i, edge in enumerate(edges):
             p1_index, p2_index = edge
+            width = style.line_style.width
+            if edge_width_multipliers is not None:
+                width *= edge_width_multipliers[i]
+            glLineWidth(width)
+
             if edge_colors is not None:
                 color = edge_colors[i]
-                scale = get_color_scale(color)
-                glLineWidth(style.line_style.width * scale)
                 glBegin(GL_LINES)
                 glColor3fv(color)
                 glVertex3fv(vertices[p1_index])
                 glVertex3fv(vertices[p2_index])
                 glEnd()
             else:
-                scale = get_color_scale(colors[p1_index])
-                glLineWidth(style.line_style.width * scale)
                 glBegin(GL_LINES)
                 glColor3fv(colors[p1_index])
                 glVertex3fv(vertices[p1_index])
@@ -120,14 +108,19 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
                 glVertex3fv(vertices[p2_index])
                 glEnd()
     elif style.line_style.style == LineStyle.CYLINDER:
-        radius = style.line_style.relative_width * volume_dimension / 20.0
+        base_radius = style.line_style.relative_width * volume_dimension / 20.0
         for i, edge in enumerate(edges):
             p1 = vertices[edge[0]]
             p2 = vertices[edge[1]]
+            
+            radius = base_radius
+            if edge_width_multipliers is not None:
+                radius *= edge_width_multipliers[i]
+
             if edge_colors is not None:
                 color = edge_colors[i]
             else:
                 color = colors[edge[0]]
-            scale = get_color_scale(color)
+
             glColor3fv(color)
-            draw_cylinder(p1, p2, radius * scale)
+            draw_cylinder(p1, p2, radius)
