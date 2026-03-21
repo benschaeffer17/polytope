@@ -33,7 +33,7 @@ class App:
         self.capture = Capture(self.ui.window)
         self.ui.register_draw_function(self.draw)
         
-        self.shape_name = '24-cell'
+        self.shape_name = '600-cell'
         self.model = None
         self.load_shape()
         
@@ -78,7 +78,8 @@ class App:
         elif self.shape_name == '120-cell':
             self.model = Cell120Model()
         elif self.shape_name == '600-cell':
-            self.model = Cell600Model()
+            self.model = Cell600Model(is_vertex_centered=False, edge_coloring="icosi",
+                                      points_mode=5, vertex_coloring="bfs")
 
     def toggle_shape(self, *args):
         if self.shape_name == '24-cell':
