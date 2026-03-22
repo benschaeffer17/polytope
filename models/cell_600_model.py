@@ -2,6 +2,7 @@
 import numpy as np
 from itertools import permutations, combinations
 from .model import Model
+from quaternion import q_mult
 
 def get_600_cell():
     """
@@ -139,6 +140,8 @@ class Cell600Model(Model):
         blue = [0.0, 0.0, 1.0]
         green = [0.0, 1.0, 0.0]
         yellow = [1.0, 1.0, 0.0]
+        purple = [1.0, 0.0, 1.0]
+        cyan = [0.0, 1.0, 1.0]
         
         if vertex_coloring == "partition":
             self.colors = []
@@ -206,10 +209,10 @@ class Cell600Model(Model):
         
         self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
         colored_edges = set()
-        colors = [green, yellow, red, blue]
-        color_index = 0
-
+        
         if edge_coloring == "bfs":
+            colors = [green, yellow, red, blue]
+            color_index = 0
             working_set = {start_vertex_index}
             while len(colored_edges) < len(self.edges):
                 color = colors[color_index % len(colors)]
@@ -234,6 +237,8 @@ class Cell600Model(Model):
                             break
         
         elif edge_coloring == "icosi":
+            colors = [green, yellow, red, blue]
+            color_index = 0
             frontier = {start_vertex_index}
             total_working_set = {start_vertex_index}
             
@@ -272,9 +277,50 @@ class Cell600Model(Model):
                             frontier = {v1}
                             total_working_set.add(v1)
                             break
+        
+        elif edge_coloring == "hopf":
+            from quaternion import q_mult, order10
+            colors = [red, blue, green, yellow, purple, cyan]
+            q = order10
+            base_ring = [np.array([1.0, 0.0, 0.0, 0.0])]
+            for _ in range(9):
+                base_ring.append(q_mult(base_ring[-1], q))
+            base_ring = np.array(base_ring)
+
+            visited_vertices = set()
+            fibrations = []
+            for i in range(len(self.vertices_4d)):
+                if i in visited_vertices:
+                    continue
+                
+                v = self.vertices_4d[i]
+                v_quat = np.array([v[0], v[1], v[2], v[3]])
+                coset = np.array([q_mult(r, v_quat) for r in base_ring])
+                
+                fibration_indices = []
+                for q_v in coset:
+                    # convert back to (x, y, z, w)
+                    q_v_vert = np.array([q_v[0], q_v[1], q_v[2], q_v[3]])
+                    # Find the closest vertex index
+                    distances = np.sum((self.vertices_4d - q_v_vert)**2, axis=1)
+                    closest_idx = np.argmin(distances)
+                    fibration_indices.append(closest_idx)
+                    visited_vertices.add(closest_idx)
+                
+                fibrations.append(fibration_indices)
+
+            for i, fibration in enumerate(fibrations):
+                color = colors[i % len(colors)]
+                for j in range(len(fibration)):
+                    v1 = fibration[j]
+                    v2 = fibration[(j + 1) % len(fibration)]
+                    edge = tuple(sorted((v1, v2)))
+                    if edge in edge_map:
+                        edge_index = edge_map[edge]
+                        self.edge_colors[edge_index] = np.array(color)
+                        colored_edges.add(edge)
         else:
             # Default to white edges if coloring scheme is unknown
             pass
 
         self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
-

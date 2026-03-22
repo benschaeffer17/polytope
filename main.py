@@ -78,7 +78,7 @@ class App:
         elif self.shape_name == '120-cell':
             self.model = Cell120Model()
         elif self.shape_name == '600-cell':
-            self.model = Cell600Model(is_vertex_centered=False, edge_coloring="icosi",
+            self.model = Cell600Model(is_vertex_centered=False, edge_coloring="hopf",
                                       points_mode=5, vertex_coloring="bfs")
 
     def toggle_shape(self, *args):
