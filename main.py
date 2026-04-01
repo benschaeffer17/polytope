@@ -45,6 +45,9 @@ class App:
         self.points_modes = [2, 3, 4, 5]
         self.points_mode_index = 3
 
+        self.blend_values = [i / 10.0 for i in range(1, 11)]
+        self.blend_index = 9
+
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -74,6 +77,7 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_8, self.toggle_vertex_mode)
         self.ui.register_keyboard_callback(glfw.KEY_9, self.toggle_edge_mode)
         self.ui.register_keyboard_callback(glfw.KEY_0, self.toggle_points_mode)
+        self.ui.register_keyboard_callback(glfw.KEY_Q, self.toggle_blend)
 
     def zoom_in(self, *args):
         new_dist = self.camera_distance / self.ZOOM_FACTOR
@@ -86,34 +90,36 @@ class App:
         self.camera_distance = min(new_dist, max_dist)
 
     def toggle_vertex_mode(self, *args):
-        current_style = self.model.style
         self.vertex_mode_index = (self.vertex_mode_index + 1) % len(self.vertex_modes)
         self.load_shape()
-        self.model.style = current_style
 
     def toggle_edge_mode(self, *args):
-        current_style = self.model.style
         self.edge_mode_index = (self.edge_mode_index + 1) % len(self.edge_modes)
         self.load_shape()
-        self.model.style = current_style
 
     def toggle_points_mode(self, *args):
-        current_style = self.model.style
         self.points_mode_index = (self.points_mode_index + 1) % len(self.points_modes)
         self.load_shape()
-        self.model.style = current_style
+
+    def toggle_blend(self, *args):
+        self.blend_index = (self.blend_index + 1) % len(self.blend_values)
+        self.load_shape()
 
     def load_shape(self):
+        current_style = self.model.style if self.model else None
+        blend = self.blend_values[self.blend_index]
         if self.shape_name == '24-cell':
-            self.model = Cell24Model()
+            self.model = Cell24Model(blend=blend)
         elif self.shape_name == '120-cell':
-            self.model = Cell120Model()
+            self.model = Cell120Model(blend=blend)
         elif self.shape_name == '600-cell':
             self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
-                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index])
+                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
+                                      blend=blend)
+        if current_style:
+            self.model.style = current_style
 
     def toggle_shape(self, *args):
-        current_style = self.model.style if self.model else None
         if self.shape_name == '24-cell':
             self.shape_name = '120-cell'
         elif self.shape_name == '120-cell':
@@ -121,8 +127,6 @@ class App:
         else:
             self.shape_name = '24-cell'
         self.load_shape()
-        if current_style:
-            self.model.style = current_style
 
     def set_rotation_plane(self, plane_index):
         self.rotation_plane = plane_index
@@ -181,7 +185,7 @@ class App:
         hud_text = (f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | "
                     f"Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}\n"
                     f"Vertex: {self.vertex_modes[self.vertex_mode_index]} | Edge: {self.edge_modes[self.edge_mode_index]} | "
-                    f"Points: {self.points_modes[self.points_mode_index]}")
+                    f"Points: {self.points_modes[self.points_mode_index]} | Blend: {self.blend_values[self.blend_index]:.1f}")
         self.hud.draw(hud_text)
 
     def run(self):
@@ -191,6 +195,8 @@ class App:
         glEnable(GL_LIGHT1)
         glEnable(GL_LIGHT2)
         glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         self.ui.run(self)
 

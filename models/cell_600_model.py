@@ -69,8 +69,8 @@ def get_600_cell():
 
 class Cell600Model(Model):
     def __init__(self, is_vertex_centered=False, edge_coloring="bfs", points_mode=None,
-                 vertex_coloring="partition"):
-        super().__init__()
+                 vertex_coloring="partition", blend=1.0):
+        super().__init__(blend=blend)
         self.vertices_4d, self.edges = get_600_cell()
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15
@@ -78,7 +78,7 @@ class Cell600Model(Model):
         if is_vertex_centered:
             red_vertex_index = -1
             for i, color in enumerate(self.colors):
-                if np.all(color == [1.0, 0.0, 0.0]):
+                if np.all(color[:3] == [1.0, 0.0, 0.0]):
                     red_vertex_index = i
                     break
             
@@ -129,12 +129,12 @@ class Cell600Model(Model):
 
 
     def _setup_coloring(self, edge_coloring, vertex_coloring):
-        red = [1.0, 0.0, 0.0]
-        blue = [0.0, 0.0, 1.0]
-        green = [0.0, 1.0, 0.0]
-        yellow = [1.0, 1.0, 0.0]
-        purple = [1.0, 0.0, 1.0]
-        cyan = [0.0, 1.0, 1.0]
+        red = [1.0, 0.0, 0.0, self.blend]
+        blue = [0.0, 0.0, 1.0, self.blend]
+        green = [0.0, 1.0, 0.0, self.blend]
+        yellow = [1.0, 1.0, 0.0, self.blend]
+        purple = [1.0, 0.0, 1.0, self.blend]
+        cyan = [0.0, 1.0, 1.0, self.blend]
         
         if vertex_coloring == "partition":
             self.colors = []
@@ -147,7 +147,7 @@ class Cell600Model(Model):
                     self.colors.append(green)
             self.colors = np.array(self.colors, dtype=np.float32)
         elif vertex_coloring == "bfs":
-            self.colors = np.array([[0.0, 0.0, 0.0]] * len(self.vertices_4d), dtype=np.float32)
+            self.colors = np.array([[0.0, 0.0, 0.0, self.blend]] * len(self.vertices_4d), dtype=np.float32)
             
             start_vertex_pos = np.array([0.0, 0.0, 0.0, 1.0])
             start_vertex_index = -1
@@ -189,7 +189,7 @@ class Cell600Model(Model):
                 break
 
         if start_vertex_index == -1:
-            self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
+            self.edge_colors = np.array([[1.0, 1.0, 1.0, self.blend]] * len(self.edges), dtype=np.float32)
             self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
             return
 
@@ -200,7 +200,7 @@ class Cell600Model(Model):
             adj[v2].append(v1)
             edge_map[tuple(sorted((v1, v2)))] = i
         
-        self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
+        self.edge_colors = np.array([[1.0, 1.0, 1.0, self.blend]] * len(self.edges), dtype=np.float32)
         colored_edges = set()
         
         if edge_coloring == "bfs":
@@ -315,7 +315,7 @@ class Cell600Model(Model):
             
             # Filter edges and edge_colors
             self.edges = list(colored_edges)
-            edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
+            edge_colors = np.array([[1.0, 1.0, 1.0, self.blend]] * len(self.edges), dtype=np.float32)
             for i, edge in enumerate(self.edges):
                 edge_colors[i] = self.edge_colors[edge_map[edge]]
             self.edge_colors = edge_colors

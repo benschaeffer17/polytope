@@ -56,14 +56,14 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
         glBegin(GL_POINTS)
         for i, vertex in enumerate(vertices):
             if i not in fixed_vertices_indices:
-                glColor3fv(colors[i])
+                glColor4fv(colors[i])
                 glVertex3fv(vertex)
         glEnd()
         # Fixed points
         glPointSize(style.point_style.size * 3)
         glBegin(GL_POINTS)
         for i in fixed_vertices_indices:
-            glColor3fv(colors[i])
+            glColor4fv(colors[i])
             glVertex3fv(vertices[i])
         glEnd()
 
@@ -80,7 +80,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
                 radius = default_radius
                 color = colors[i]
 
-            glColor3fv(color)
+            glColor4fv(color)
             gluSphere(quad, radius, 16, 16)
             glPopMatrix()
 
@@ -96,15 +96,15 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
             if edge_colors is not None:
                 color = edge_colors[i]
                 glBegin(GL_LINES)
-                glColor3fv(color)
+                glColor4fv(color)
                 glVertex3fv(vertices[p1_index])
                 glVertex3fv(vertices[p2_index])
                 glEnd()
             else:
                 glBegin(GL_LINES)
-                glColor3fv(colors[p1_index])
+                glColor4fv(colors[p1_index])
                 glVertex3fv(vertices[p1_index])
-                glColor3fv(colors[p2_index])
+                glColor4fv(colors[p2_index])
                 glVertex3fv(vertices[p2_index])
                 glEnd()
     elif style.line_style.style == LineStyle.CYLINDER:
@@ -122,5 +122,5 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
             else:
                 color = colors[edge[0]]
 
-            glColor3fv(color)
+            glColor4fv(color)
             draw_cylinder(p1, p2, radius)

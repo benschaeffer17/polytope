@@ -32,8 +32,8 @@ def get_24_cell():
     return vertices, edges
 
 class Cell24Model(Model):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, blend=1.0):
+        super().__init__(blend=blend)
         self.vertices_4d, self.edges = get_24_cell()
         self.style.point_style.relative_size = 1.0
         self.style.line_style.relative_width = 0.45
@@ -44,9 +44,9 @@ class Cell24Model(Model):
         v_middle_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 0}
         v_outer_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 1}
 
-        cyan = [0.0, 1.0, 1.0]
-        orange = [1.0, 0.65, 0.0]
-        pale_red = [1.0, 0.5, 0.5]
+        cyan = [0.0, 1.0, 1.0, self.blend]
+        orange = [1.0, 0.65, 0.0, self.blend]
+        pale_red = [1.0, 0.5, 0.5, self.blend]
         self.colors = []
         for i in range(len(self.vertices_4d)):
             if i in v_inner_indices:
@@ -60,11 +60,11 @@ class Cell24Model(Model):
         self.edge_colors = []
         self.edge_width_multipliers = []
         
-        green = [0.0, 1.0, 0.0]
-        red = [1.0, 0.0, 0.0]
-        blue = [0.0, 0.0, 1.0]
-        yellow = [1.0, 1.0, 0.0]
-        purple = [1.0, 0.0, 1.0]
+        green = [0.0, 1.0, 0.0, self.blend]
+        red = [1.0, 0.0, 0.0, self.blend]
+        blue = [0.0, 0.0, 1.0, self.blend]
+        yellow = [1.0, 1.0, 0.0, self.blend]
+        purple = [1.0, 0.0, 1.0, self.blend]
 
         width_multipliers = {
             "red": 1.2, "green": 1.15, "blue": 1.1,
@@ -95,7 +95,7 @@ class Cell24Model(Model):
                 self.edge_colors.append(purple)
                 self.edge_width_multipliers.append(width_multipliers["purple"])
             else:
-                self.edge_colors.append([1.0, 1.0, 1.0])
+                self.edge_colors.append([1.0, 1.0, 1.0, self.blend])
                 self.edge_width_multipliers.append(1.0)
         
         self.edge_colors = np.array(self.edge_colors, dtype=np.float32)

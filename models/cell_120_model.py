@@ -44,11 +44,11 @@ def get_120_cell():
     return vertices, edges
 
 class Cell120Model(Model):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, blend=1.0):
+        super().__init__(blend=blend)
         self.vertices_4d, self.edges = get_120_cell()
         self.style.point_style.relative_size = 0.33
         self.style.line_style.relative_width = 0.15
-        self.colors = np.array([[1.0, 1.0, 1.0]] * len(self.vertices_4d), dtype=np.float32)
-        self.edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
+        self.colors = np.array([[1.0, 1.0, 1.0, self.blend]] * len(self.vertices_4d), dtype=np.float32)
+        self.edge_colors = np.array([[1.0, 1.0, 1.0, self.blend]] * len(self.edges), dtype=np.float32)
         self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
