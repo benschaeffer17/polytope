@@ -74,7 +74,6 @@ class Cell600Model(Model):
         self.vertices_4d, self.edges = get_600_cell()
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15
-        self._setup_coloring(edge_coloring, vertex_coloring)
 
         if is_vertex_centered:
             red_vertex_index = -1
@@ -118,21 +117,15 @@ class Cell600Model(Model):
                 old_to_new_indices = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted(list(kept_vertices)))}
                 
                 self.vertices_4d = self.vertices_4d[sorted(list(kept_vertices))]
-                self.colors = self.colors[sorted(list(kept_vertices))]
                 
                 new_edges = []
-                new_edge_colors = []
-                new_edge_width_multipliers = []
                 
                 for i, (v1, v2) in enumerate(self.edges):
                     if v1 in kept_vertices and v2 in kept_vertices:
                         new_edges.append((old_to_new_indices[v1], old_to_new_indices[v2]))
-                        new_edge_colors.append(self.edge_colors[i])
-                        new_edge_width_multipliers.append(self.edge_width_multipliers[i])
                 
                 self.edges = new_edges
-                self.edge_colors = np.array(new_edge_colors, dtype=np.float32)
-                self.edge_width_multipliers = np.array(new_edge_width_multipliers, dtype=np.float32)
+        self._setup_coloring(edge_coloring, vertex_coloring)
 
 
     def _setup_coloring(self, edge_coloring, vertex_coloring):
@@ -319,6 +312,14 @@ class Cell600Model(Model):
                         edge_index = edge_map[edge]
                         self.edge_colors[edge_index] = np.array(color)
                         colored_edges.add(edge)
+            
+            # Filter edges and edge_colors
+            self.edges = list(colored_edges)
+            edge_colors = np.array([[1.0, 1.0, 1.0]] * len(self.edges), dtype=np.float32)
+            for i, edge in enumerate(self.edges):
+                edge_colors[i] = self.edge_colors[edge_map[edge]]
+            self.edge_colors = edge_colors
+
         else:
             # Default to white edges if coloring scheme is unknown
             pass

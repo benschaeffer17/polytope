@@ -35,6 +35,16 @@ class App:
         
         self.shape_name = '600-cell'
         self.model = None
+
+        self.vertex_modes = ['bfs', 'partition']
+        self.vertex_mode_index = 0
+
+        self.edge_modes = ['bfs', 'icosi', 'hopf']
+        self.edge_mode_index = 0
+
+        self.points_modes = [2, 3, 4, 5]
+        self.points_mode_index = 3
+
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -61,6 +71,9 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_Z, self.decrease_rotation_speed)
         self.ui.register_keyboard_callback(glfw.KEY_K, self.zoom_out)
         self.ui.register_keyboard_callback(glfw.KEY_M, self.zoom_in)
+        self.ui.register_keyboard_callback(glfw.KEY_8, self.toggle_vertex_mode)
+        self.ui.register_keyboard_callback(glfw.KEY_9, self.toggle_edge_mode)
+        self.ui.register_keyboard_callback(glfw.KEY_0, self.toggle_points_mode)
 
     def zoom_in(self, *args):
         new_dist = self.camera_distance / self.ZOOM_FACTOR
@@ -72,16 +85,35 @@ class App:
         max_dist = self.default_camera_distance * self.MAX_ZOOM_FACTOR
         self.camera_distance = min(new_dist, max_dist)
 
+    def toggle_vertex_mode(self, *args):
+        current_style = self.model.style
+        self.vertex_mode_index = (self.vertex_mode_index + 1) % len(self.vertex_modes)
+        self.load_shape()
+        self.model.style = current_style
+
+    def toggle_edge_mode(self, *args):
+        current_style = self.model.style
+        self.edge_mode_index = (self.edge_mode_index + 1) % len(self.edge_modes)
+        self.load_shape()
+        self.model.style = current_style
+
+    def toggle_points_mode(self, *args):
+        current_style = self.model.style
+        self.points_mode_index = (self.points_mode_index + 1) % len(self.points_modes)
+        self.load_shape()
+        self.model.style = current_style
+
     def load_shape(self):
         if self.shape_name == '24-cell':
             self.model = Cell24Model()
         elif self.shape_name == '120-cell':
             self.model = Cell120Model()
         elif self.shape_name == '600-cell':
-            self.model = Cell600Model(is_vertex_centered=False, edge_coloring="hopf",
-                                      points_mode=5, vertex_coloring="bfs")
+            self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
+                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index])
 
     def toggle_shape(self, *args):
+        current_style = self.model.style if self.model else None
         if self.shape_name == '24-cell':
             self.shape_name = '120-cell'
         elif self.shape_name == '120-cell':
@@ -89,6 +121,8 @@ class App:
         else:
             self.shape_name = '24-cell'
         self.load_shape()
+        if current_style:
+            self.model.style = current_style
 
     def set_rotation_plane(self, plane_index):
         self.rotation_plane = plane_index
@@ -144,7 +178,11 @@ class App:
         render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
-        self.hud.draw(f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}")
+        hud_text = (f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | "
+                    f"Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}\n"
+                    f"Vertex: {self.vertex_modes[self.vertex_mode_index]} | Edge: {self.edge_modes[self.edge_mode_index]} | "
+                    f"Points: {self.points_modes[self.points_mode_index]}")
+        self.hud.draw(hud_text)
 
     def run(self):
         glEnable(GL_DEPTH_TEST)
