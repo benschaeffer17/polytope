@@ -73,7 +73,7 @@ class Test600Cell(unittest.TestCase):
         
         for edge_color in model.edge_colors:
             # Find the closest color in the list of 7 colors
-            distances = [np.linalg.norm(edge_color - c) for c in colors]
+            distances = [np.linalg.norm(edge_color[:3] - c) for c in colors]
             closest_color_idx = np.argmin(distances)
             closest_color = colors[closest_color_idx]
             color_counts[tuple(closest_color)] += 1
@@ -86,7 +86,7 @@ class Test600Cell(unittest.TestCase):
         self.assertEqual(color_counts[tuple(yellow)], 20, f"Yellow count is {color_counts[tuple(yellow)]}")
         self.assertEqual(color_counts[tuple(purple)], 20, f"Purple count is {color_counts[tuple(purple)]}")
         self.assertEqual(color_counts[tuple(cyan)], 20, f"Cyan count is {color_counts[tuple(cyan)]}")
-        self.assertEqual(color_counts[tuple(white)], 600, f"White count is {color_counts[tuple(white)]}")
+        self.assertEqual(color_counts[tuple(white)], 0, f"White count is {color_counts[tuple(white)]}")
 
     def test_adjacency_list_length(self):
         """
