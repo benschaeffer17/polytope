@@ -88,6 +88,13 @@ class Test600Cell(unittest.TestCase):
         self.assertEqual(color_counts[tuple(cyan)], 20, f"Cyan count is {color_counts[tuple(cyan)]}")
         self.assertEqual(color_counts[tuple(white)], 0, f"White count is {color_counts[tuple(white)]}")
 
+    def test_hopf_edge_count(self):
+        """
+        Tests that there are exactly 120 edges in hopf mode.
+        """
+        model = Cell600Model(edge_coloring="hopf")
+        self.assertEqual(len(model.edges), 120)
+
     def test_adjacency_list_length(self):
         """
         Tests that each vertex in the 600-cell has 12 neighbors.

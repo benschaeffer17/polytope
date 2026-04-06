@@ -42,8 +42,8 @@ class App:
         self.edge_modes = ['bfs', 'icosi', 'hopf']
         self.edge_mode_index = 0
 
-        self.points_modes = [2, 3, 4, 5]
-        self.points_mode_index = 3
+        self.points_modes = [6, 2, 3, 4, 5]
+        self.points_mode_index = 0
 
         self.blend_values = [i / 10.0 for i in range(1, 11)]
         self.blend_index = 9

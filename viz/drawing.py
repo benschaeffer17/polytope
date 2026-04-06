@@ -51,6 +51,10 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
 
     # Draw points
     if style.point_style.style == PointStyle.POINT:
+        glEnable(GL_POINT_SMOOTH)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
         # Non-fixed points
         glPointSize(style.point_style.size)
         glBegin(GL_POINTS)
@@ -66,6 +70,9 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
             glColor4fv(colors[i])
             glVertex3fv(vertices[i])
         glEnd()
+        
+        glDisable(GL_BLEND)
+        glDisable(GL_POINT_SMOOTH)
 
     elif style.point_style.style == PointStyle.SPHERE:
         default_radius = style.point_style.relative_size * volume_dimension / 20.0
