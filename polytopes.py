@@ -2,7 +2,7 @@
 import numpy as np
 from itertools import permutations, combinations
 
-def project_4d_to_3d(vertices, rotation_matrix=None):
+def project_4d_to_3d(vertices, rotation_matrix=None, d=2.0):
     """
     Projects 4D vertices to 3D after applying a rotation.
     """
@@ -18,7 +18,6 @@ def project_4d_to_3d(vertices, rotation_matrix=None):
         # We can play with this later. For now, a simple perspective projection.
         # Let's assume the eye is at (0,0,0,d) and the projection hyperplane is w=0.
         # A point (x,y,z,w) is projected to d * (x,y,z) / (d-w)
-        d = 2.0
         if d - w != 0:
             projected_vertices.append( (d * v[0:3]) / (d - w) )
         else:

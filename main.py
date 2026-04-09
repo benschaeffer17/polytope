@@ -48,6 +48,9 @@ class App:
         self.blend_values = [i / 10.0 for i in range(1, 11)]
         self.blend_index = 9
 
+        self.d_values = [1.0, 1.2, 1.5, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]
+        self.d_index = 3
+
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -70,6 +73,7 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_5, lambda *args: self.set_rotation_plane(4))
         self.ui.register_keyboard_callback(glfw.KEY_6, lambda *args: self.set_rotation_plane(5))
         self.ui.register_keyboard_callback(glfw.KEY_A, self.increase_rotation_speed)
+        self.ui.register_keyboard_callback(glfw.KEY_D, self.toggle_d_value)
 
         self.ui.register_keyboard_callback(glfw.KEY_Z, self.decrease_rotation_speed)
         self.ui.register_keyboard_callback(glfw.KEY_K, self.zoom_out)
@@ -88,6 +92,9 @@ class App:
         new_dist = self.camera_distance * self.ZOOM_FACTOR
         max_dist = self.default_camera_distance * self.MAX_ZOOM_FACTOR
         self.camera_distance = min(new_dist, max_dist)
+
+    def toggle_d_value(self, *args):
+        self.d_index = (self.d_index + 1) % len(self.d_values)
 
     def toggle_vertex_mode(self, *args):
         self.vertex_mode_index = (self.vertex_mode_index + 1) % len(self.vertex_modes)
@@ -168,7 +175,7 @@ class App:
         plane_indices = self.rotator.planes[self.rotation_plane]
         fixed_vertices_indices = {i for i, v in enumerate(self.model.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
 
-        projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix)
+        projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
         
         glPopMatrix()
@@ -185,7 +192,7 @@ class App:
         hud_text = (f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | "
                     f"Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}\n"
                     f"Vertex: {self.vertex_modes[self.vertex_mode_index]} | Edge: {self.edge_modes[self.edge_mode_index]} | "
-                    f"Points: {self.points_modes[self.points_mode_index]} | Blend: {self.blend_values[self.blend_index]:.1f}")
+                    f"Points: {self.points_modes[self.points_mode_index]} | Blend: {self.blend_values[self.blend_index]:.1f} | d: {self.d_values[self.d_index]:.1f}")
         self.hud.draw(hud_text)
 
     def run(self):
