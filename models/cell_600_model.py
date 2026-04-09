@@ -141,7 +141,8 @@ class Cell600Model(Model):
         self.edge_color_maps = {
             "bfs": self._compute_edge_colors_bfs(),
             "icosi": self._compute_edge_colors_icosi(),
-            "hopf": self._compute_edge_colors_hopf()
+            "hopf": self._compute_edge_colors_hopf(),
+            "zome": self._compute_edge_colors_zome()
         }
 
         # 7. Cull vertices and edges based on points_mode
@@ -204,7 +205,7 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["RED", "GREEN", "BLUE", "YELLOW"]
+        colors = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "CYAN"]
         color_map[self.start_vertex_index] = colors[0]
         
         for v, depth in self.vertex_depths.items():
@@ -217,7 +218,7 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["GREEN", "YELLOW", "RED", "BLUE"]
+        colors = ["GREEN", "YELLOW", "RED", "BLUE", "PURPLE", "CYAN"]
         color_index = 0
         working_set = {self.start_vertex_index}
         colored_edges = set()
@@ -249,7 +250,7 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["GREEN", "YELLOW", "RED", "BLUE"]
+        colors = ["GREEN", "YELLOW", "RED", "BLUE", "PURPLE", "CYAN"]
         color_index = 0
         frontier = {self.start_vertex_index}
         total_working_set = {self.start_vertex_index}
@@ -329,4 +330,42 @@ class Cell600Model(Model):
                 if edge in self.base_edge_map:
                     color_map[edge] = color
                     
+        return color_map
+
+    def _compute_edge_colors_zome(self):
+        color_map = {}
+        if self.start_vertex_index == -1:
+            return color_map
+
+        vertex_classes = {}
+        for v in range(len(self.base_vertices_4d)):
+            if v not in self.vertex_depths:
+                vertex_classes[v] = (0, 0)
+                continue
+            
+            a = self.vertex_depths[v]
+            if a == 0:
+                b = 0
+            else:
+                b = sum(1 for neighbor in self.base_adj[v] if self.vertex_depths.get(neighbor) == a - 1)
+            vertex_classes[v] = (a, b)
+            
+        edge_classes = {}
+        for v1, v2 in self.base_edges:
+            edge = tuple(sorted((v1, v2)))
+            c1 = vertex_classes[v1]
+            c2 = vertex_classes[v2]
+            edge_class = tuple(sorted((c1, c2)))
+            if edge_class not in edge_classes:
+                edge_classes[edge_class] = []
+            edge_classes[edge_class].append(edge)
+            
+        sorted_classes = sorted(list(edge_classes.keys()))
+        colors = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "CYAN"]
+        
+        for i, edge_class in enumerate(sorted_classes):
+            color = colors[i % len(colors)]
+            for edge in edge_classes[edge_class]:
+                color_map[edge] = color
+                
         return color_map

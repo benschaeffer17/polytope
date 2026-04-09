@@ -39,7 +39,7 @@ class App:
         self.vertex_modes = ['bfs', 'partition']
         self.vertex_mode_index = 0
 
-        self.edge_modes = ['bfs', 'icosi', 'hopf']
+        self.edge_modes = ['bfs', 'icosi', 'hopf', 'zome']
         self.edge_mode_index = 0
 
         self.points_modes = [6, 2, 3, 4, 5]
