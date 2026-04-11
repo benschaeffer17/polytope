@@ -159,10 +159,36 @@ class Cell600Model(Model):
                 current_depth += 1
                 last_dist = dist
             self.distance_depths[i] = current_depth - 1
+            
+        # 5c. Compute hopf depths (labels) for vertices
+        self.hopf_depths = {}
+        from quaternion import q_mult, order10
+        q = order10
+        base_ring = [np.array([1.0, 0.0, 0.0, 0.0])]
+        for _ in range(9):
+            base_ring.append(q_mult(base_ring[-1], q))
+        base_ring = np.array(base_ring)
+
+        visited_vertices = set()
+        for i in range(len(self.base_vertices_4d)):
+            if i in visited_vertices:
+                continue
+            
+            v = self.base_vertices_4d[i]
+            v_quat = np.array([v[0], v[1], v[2], v[3]])
+            coset = np.array([q_mult(r, v_quat) for r in base_ring])
+            
+            for j, q_v in enumerate(coset):
+                q_v_vert = np.array([q_v[0], q_v[1], q_v[2], q_v[3]])
+                distances = np.sum((self.base_vertices_4d - q_v_vert)**2, axis=1)
+                closest_idx = np.argmin(distances)
+                self.hopf_depths[closest_idx] = j
+                visited_vertices.add(closest_idx)
 
         # 6. Compute remaining color maps
         self.vertex_color_maps["bfs"] = self._compute_vertex_colors_bfs()
         self.vertex_color_maps["distance"] = self._compute_vertex_colors_distance()
+        self.vertex_color_maps["hopf"] = self._compute_vertex_colors_hopf()
         self.edge_color_maps = {
             "bfs": self._compute_edge_colors_bfs(),
             "icosi": self._compute_edge_colors_icosi(),
@@ -172,7 +198,14 @@ class Cell600Model(Model):
 
         # 7. Cull vertices and edges based on points_mode
         kept_vertices = set()
-        active_depths = self.vertex_depths if point_set == "dfs" else self.distance_depths
+        if point_set == "dfs":
+            active_depths = self.vertex_depths
+        elif point_set == "distance":
+            active_depths = self.distance_depths
+        elif point_set == "hopf":
+            active_depths = self.hopf_depths
+        else:
+            active_depths = self.vertex_depths
         
         if points_mode is not None and points_mode > 0 and active_depths:
             for v, depth in active_depths.items():
@@ -250,6 +283,12 @@ class Cell600Model(Model):
     def _compute_vertex_colors_distance(self):
         color_map = {}
         for v, depth in self.distance_depths.items():
+            color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
+        return color_map
+
+    def _compute_vertex_colors_hopf(self):
+        color_map = {}
+        for v, depth in self.hopf_depths.items():
             color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
         return color_map
 

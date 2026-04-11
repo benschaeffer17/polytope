@@ -38,19 +38,19 @@ class App:
         self.shape_name = '600-cell'
         self.model = None
 
-        self.vertex_modes = ['partition', 'bfs', 'distance']
+        self.vertex_modes = ['partition', 'bfs', 'distance', 'hopf']
         self.vertex_mode_index = 0
 
         self.edge_modes = ['bfs', 'icosi', 'hopf', 'zome']
         self.edge_mode_index = 0
 
-        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         self.points_mode_index = 5
 
         self.slice_modes = ['at_least', 'exact', 'adjacent', 'echo']
         self.slice_mode_index = 0
 
-        self.point_sets = ['dfs', 'distance']
+        self.point_sets = ['dfs', 'distance', 'hopf']
         self.point_set_index = 0
 
         self.blend_values = [i / 10.0 for i in range(1, 11)]
