@@ -6,6 +6,8 @@ from OpenGL.GLUT import *
 class HeadsUpDisplay:
     def __init__(self, window):
         self.window = window
+        self.font = GLUT_STROKE_MONO_ROMAN
+        self.text_scale = 0.06
 
     def draw(self, nav_state):
         glDisable(GL_LIGHTING)
@@ -23,9 +25,39 @@ class HeadsUpDisplay:
         glLoadIdentity()
 
         glColor3f(1.0, 1.0, 1.0)
-        glRasterPos2i(10, height - 30)
-        for character in nav_state:
-            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, ord(character))
+        
+        if isinstance(nav_state, str):
+            lines = nav_state.split('\n')
+        else:
+            lines = nav_state
+
+        font = getattr(self, 'font', GLUT_STROKE_MONO_ROMAN)
+        
+        dynamic_scale = min(width / 800.0, height / 600.0)
+
+        if font in [GLUT_STROKE_ROMAN, GLUT_STROKE_MONO_ROMAN]:
+            scale = getattr(self, 'text_scale', 0.06) * dynamic_scale
+            glLineWidth(max(1.0, 1.5 * dynamic_scale))
+            y_pos = height - (150 * scale)
+            line_spacing = 150 * scale
+            for line in lines:
+                glPushMatrix()
+                glTranslatef(10.0, y_pos, 0.0)
+                glScalef(scale, scale, scale)
+                for character in line:
+                    glutStrokeCharacter(font, ord(character))
+                glPopMatrix()
+                y_pos -= line_spacing
+        else:
+            y_pos = height - 30
+            line_spacing = 18 if font == GLUT_BITMAP_9_BY_15 else 28
+            for line in lines:
+                x_pos = 10.0
+                for character in line:
+                    glRasterPos2f(x_pos, y_pos)
+                    glutBitmapCharacter(font, ord(character))
+                    x_pos += glutBitmapWidth(font, ord(character))
+                y_pos -= line_spacing
 
         glMatrixMode(GL_PROJECTION)
         glPopMatrix()

@@ -3,7 +3,7 @@ import glfw
 from OpenGL.GL import *
 import numpy as np
 import sys
-from OpenGL.GLUT import glutInit
+from OpenGL.GLUT import glutInit, GLUT_STROKE_MONO_ROMAN
 import os
 from PIL import Image
 
@@ -29,6 +29,8 @@ class App:
         self.ui = UserInterface(title="Polytope Visualizer")
         self.nav = Navigator(self.ui)
         self.hud = HeadsUpDisplay(self.ui.window)
+        self.hud.font = GLUT_STROKE_MONO_ROMAN
+        self.hud.text_scale = 0.06
         self.rotator = Rotator()
         self.capture = Capture(self.ui.window)
         self.ui.register_draw_function(self.draw)
@@ -36,14 +38,20 @@ class App:
         self.shape_name = '600-cell'
         self.model = None
 
-        self.vertex_modes = ['bfs', 'partition']
+        self.vertex_modes = ['partition', 'bfs', 'distance']
         self.vertex_mode_index = 0
 
         self.edge_modes = ['bfs', 'icosi', 'hopf', 'zome']
         self.edge_mode_index = 0
 
-        self.points_modes = [6, 2, 3, 4, 5]
-        self.points_mode_index = 0
+        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        self.points_mode_index = 5
+
+        self.slice_modes = ['at_least', 'exact', 'adjacent', 'echo']
+        self.slice_mode_index = 0
+
+        self.point_sets = ['dfs', 'distance']
+        self.point_set_index = 0
 
         self.blend_values = [i / 10.0 for i in range(1, 11)]
         self.blend_index = 9
@@ -81,6 +89,8 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_8, self.toggle_vertex_mode)
         self.ui.register_keyboard_callback(glfw.KEY_9, self.toggle_edge_mode)
         self.ui.register_keyboard_callback(glfw.KEY_0, self.toggle_points_mode)
+        self.ui.register_keyboard_callback(glfw.KEY_S, self.toggle_slice_mode)
+        self.ui.register_keyboard_callback(glfw.KEY_F, self.toggle_point_set)
         self.ui.register_keyboard_callback(glfw.KEY_Q, self.toggle_blend)
 
     def zoom_in(self, *args):
@@ -108,6 +118,14 @@ class App:
         self.points_mode_index = (self.points_mode_index + 1) % len(self.points_modes)
         self.load_shape()
 
+    def toggle_slice_mode(self, *args):
+        self.slice_mode_index = (self.slice_mode_index + 1) % len(self.slice_modes)
+        self.load_shape()
+
+    def toggle_point_set(self, *args):
+        self.point_set_index = (self.point_set_index + 1) % len(self.point_sets)
+        self.load_shape()
+
     def toggle_blend(self, *args):
         self.blend_index = (self.blend_index + 1) % len(self.blend_values)
         self.load_shape()
@@ -122,7 +140,7 @@ class App:
         elif self.shape_name == '600-cell':
             self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
                                       points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
-                                      blend=blend)
+                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index])
         if current_style:
             self.model.style = current_style
 
@@ -189,11 +207,12 @@ class App:
         render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
-        hud_text = (f"Shape: {self.shape_name} | Dist: {self.camera_distance:.2f} | Render: {render_mode} | "
-                    f"Rotation: {plane_name} | Speed: {self.rotation_speed_level} | FPS: {self.ui.fps} | Capture: {capture_status}\n"
-                    f"Vertex: {self.vertex_modes[self.vertex_mode_index]} | Edge: {self.edge_modes[self.edge_mode_index]} | "
-                    f"Points: {self.points_modes[self.points_mode_index]} | Blend: {self.blend_values[self.blend_index]:.1f} | d: {self.d_values[self.d_index]:.1f}")
-        self.hud.draw(hud_text)
+        
+        hud_lines = [
+            f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<2} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
+            f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}"
+        ]
+        self.hud.draw(hud_lines)
 
     def run(self):
         glEnable(GL_DEPTH_TEST)

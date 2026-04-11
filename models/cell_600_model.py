@@ -68,7 +68,7 @@ def get_600_cell():
 
 class Cell600Model(Model):
     def __init__(self, is_vertex_centered=False, edge_coloring="bfs", points_mode=None,
-                 vertex_coloring="partition", blend=1.0):
+                 vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs"):
         super().__init__(blend=blend)
         self.base_vertices_4d, self.base_edges = get_600_cell()
         self.style.point_style.relative_size = 0.5
@@ -82,8 +82,14 @@ class Cell600Model(Model):
             "PURPLE": [1.0, 0.0, 1.0],
             "CYAN": [0.0, 1.0, 1.0],
             "WHITE": [1.0, 1.0, 1.0],
-            "BLACK": [0.0, 0.0, 0.0]
+            "BLACK": [0.0, 0.0, 0.0],
+            "ORANGE": [1.0, 0.5, 0.0],
+            "PINK": [1.0, 0.75, 0.8],
+            "LIME": [0.75, 1.0, 0.0],
+            "ROSE": [1.0, 0.0, 0.5]
         }
+        
+        self.color_sequence = ["RED", "CYAN", "LIME", "PURPLE", "YELLOW", "BLUE", "ORANGE", "GREEN", "ROSE"]
         
         # 1. Base initialization (Adjacency, etc)
         self.base_adj = [[] for _ in range(len(self.base_vertices_4d))]
@@ -103,7 +109,7 @@ class Cell600Model(Model):
             red_vertex_index = -1
             partition_map = self.vertex_color_maps["partition"]
             for i in range(len(self.base_vertices_4d)):
-                if partition_map.get(i) == "RED":
+                if partition_map.get(i) == self.color_sequence[0]:
                     red_vertex_index = i
                     break
             
@@ -136,8 +142,27 @@ class Cell600Model(Model):
                         self.vertex_depths[neighbor] = curr_dist + 1
                         q.append((neighbor, curr_dist + 1))
 
+        # 5b. Compute distance depths (labels) for vertices
+        self.distance_depths = {}
+        north_pole = np.array([0.0, 0.0, 0.0, 1.0])
+        distances = []
+        for i, v in enumerate(self.base_vertices_4d):
+            dist = np.linalg.norm(v - north_pole)
+            distances.append((i, dist))
+            
+        distances.sort(key=lambda x: x[1])
+        
+        current_depth = 0
+        last_dist = -1.0
+        for i, dist in distances:
+            if dist > last_dist + 1e-5:
+                current_depth += 1
+                last_dist = dist
+            self.distance_depths[i] = current_depth - 1
+
         # 6. Compute remaining color maps
         self.vertex_color_maps["bfs"] = self._compute_vertex_colors_bfs()
+        self.vertex_color_maps["distance"] = self._compute_vertex_colors_distance()
         self.edge_color_maps = {
             "bfs": self._compute_edge_colors_bfs(),
             "icosi": self._compute_edge_colors_icosi(),
@@ -147,10 +172,22 @@ class Cell600Model(Model):
 
         # 7. Cull vertices and edges based on points_mode
         kept_vertices = set()
-        if points_mode is not None and points_mode > 0 and self.start_vertex_index != -1:
-            for v, depth in self.vertex_depths.items():
-                if depth < points_mode:
-                    kept_vertices.add(v)
+        active_depths = self.vertex_depths if point_set == "dfs" else self.distance_depths
+        
+        if points_mode is not None and points_mode > 0 and active_depths:
+            for v, depth in active_depths.items():
+                if slice_mode == "exact":
+                    if depth == points_mode - 1:
+                        kept_vertices.add(v)
+                elif slice_mode == "adjacent":
+                    if points_mode - 2 <= depth <= points_mode:
+                        kept_vertices.add(v)
+                elif slice_mode == "echo":
+                    if depth == points_mode - 1 or depth == 9 - points_mode:
+                        kept_vertices.add(v)
+                else:
+                    if depth < points_mode:
+                        kept_vertices.add(v)
         else:
             kept_vertices = set(range(len(self.base_vertices_4d)))
 
@@ -193,11 +230,11 @@ class Cell600Model(Model):
         color_map = {}
         for i, v in enumerate(self.base_vertices_4d):
             if np.sum(np.abs(v)) == 1.0:
-                color_map[i] = "RED"
+                color_map[i] = self.color_sequence[0]
             elif np.all(np.abs(v) == 0.5):
-                color_map[i] = "BLUE"
+                color_map[i] = self.color_sequence[1]
             else:
-                color_map[i] = "GREEN"
+                color_map[i] = self.color_sequence[2]
         return color_map
 
     def _compute_vertex_colors_bfs(self):
@@ -205,12 +242,15 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "CYAN"]
-        color_map[self.start_vertex_index] = colors[0]
-        
         for v, depth in self.vertex_depths.items():
-            color_map[v] = colors[depth % len(colors)]
+            color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
             
+        return color_map
+
+    def _compute_vertex_colors_distance(self):
+        color_map = {}
+        for v, depth in self.distance_depths.items():
+            color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
         return color_map
 
     def _compute_edge_colors_bfs(self):
@@ -218,13 +258,12 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["GREEN", "YELLOW", "RED", "BLUE", "PURPLE", "CYAN"]
-        color_index = 0
+        color_index = 3
         working_set = {self.start_vertex_index}
         colored_edges = set()
         
         while len(colored_edges) < len(self.base_edges):
-            color = colors[color_index % len(colors)]
+            color = self.color_sequence[color_index % len(self.color_sequence)]
             next_working_set = set()
             
             for v1 in working_set:
@@ -250,14 +289,13 @@ class Cell600Model(Model):
         if self.start_vertex_index == -1:
             return color_map
             
-        colors = ["GREEN", "YELLOW", "RED", "BLUE", "PURPLE", "CYAN"]
-        color_index = 0
+        color_index = 3
         frontier = {self.start_vertex_index}
         total_working_set = {self.start_vertex_index}
         colored_edges = set()
         
         while len(colored_edges) < len(self.base_edges):
-            color = colors[color_index % len(colors)]
+            color = self.color_sequence[color_index % len(self.color_sequence)]
             
             if color_index % 2 == 0: # Expand
                 next_frontier = set()
@@ -294,7 +332,6 @@ class Cell600Model(Model):
     def _compute_edge_colors_hopf(self):
         color_map = {}
         from quaternion import q_mult, order10
-        colors = ["RED", "BLUE", "GREEN", "YELLOW", "PURPLE", "CYAN"]
         q = order10
         base_ring = [np.array([1.0, 0.0, 0.0, 0.0])]
         for _ in range(9):
@@ -322,7 +359,7 @@ class Cell600Model(Model):
             fibrations.append(fibration_indices)
 
         for i, fibration in enumerate(fibrations):
-            color = colors[i % len(colors)]
+            color = self.color_sequence[(i + 3) % len(self.color_sequence)]
             for j in range(len(fibration)):
                 v1 = fibration[j]
                 v2 = fibration[(j + 1) % len(fibration)]
@@ -361,10 +398,9 @@ class Cell600Model(Model):
             edge_classes[edge_class].append(edge)
             
         sorted_classes = sorted(list(edge_classes.keys()))
-        colors = ["RED", "GREEN", "BLUE", "YELLOW", "PURPLE", "CYAN"]
         
         for i, edge_class in enumerate(sorted_classes):
-            color = colors[i % len(colors)]
+            color = self.color_sequence[(i + 3) % len(self.color_sequence)]
             for edge in edge_classes[edge_class]:
                 color_map[edge] = color
                 
