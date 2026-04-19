@@ -55,38 +55,35 @@ class Test600Cell(unittest.TestCase):
 
     def test_hopf_edge_coloring(self):
         """
-        Tests that the 'hopf' edge coloring results in 24 edges of each of the 5 colors,
-        and the remaining 600 edges are white.
+        Tests that the 'hopf' edge coloring results in groups of 20 and 10 edges,
+        rotating through the color sequence.
         """
         model = Cell600Model(edge_coloring="hopf")
         
-        red = np.array([1.0, 0.0, 0.0])
-        blue = np.array([0.0, 0.0, 1.0])
-        green = np.array([0.0, 1.0, 0.0])
-        yellow = np.array([1.0, 1.0, 0.0])
-        purple = np.array([1.0, 0.0, 1.0])
-        cyan = np.array([0.0, 1.0, 1.0])
-        white = np.array([1.0, 1.0, 1.0])
+        from models.color_constants import COLOR_VALUES, COLOR_SEQUENCE
         
-        colors = [red, blue, green, yellow, purple, cyan, white]
-        color_counts = {tuple(c): 0 for c in colors}
+        color_counts = {name: 0 for name in COLOR_VALUES.keys()}
         
         for edge_color in model.edge_colors:
-            # Find the closest color in the list of 7 colors
-            distances = [np.linalg.norm(edge_color[:3] - c) for c in colors]
-            closest_color_idx = np.argmin(distances)
-            closest_color = colors[closest_color_idx]
-            color_counts[tuple(closest_color)] += 1
+            # Find the exact match in the COLOR_VALUES
+            for name, rgb in COLOR_VALUES.items():
+                if np.allclose(edge_color[:3], rgb, atol=1e-5):
+                    color_counts[name] += 1
+                    break
+
+        expected_counts = {name: 0 for name in COLOR_VALUES.keys()}
+        for i in range(12):
+            color_name = COLOR_SEQUENCE[i % len(COLOR_SEQUENCE)]
+            expected_counts[color_name] += 10
 
         print("Color counts:", color_counts)
 
-        self.assertEqual(color_counts[tuple(red)], 20, f"Red count is {color_counts[tuple(red)]}")
-        self.assertEqual(color_counts[tuple(blue)], 20, f"Blue count is {color_counts[tuple(blue)]}")
-        self.assertEqual(color_counts[tuple(green)], 20, f"Green count is {color_counts[tuple(green)]}")
-        self.assertEqual(color_counts[tuple(yellow)], 20, f"Yellow count is {color_counts[tuple(yellow)]}")
-        self.assertEqual(color_counts[tuple(purple)], 20, f"Purple count is {color_counts[tuple(purple)]}")
-        self.assertEqual(color_counts[tuple(cyan)], 20, f"Cyan count is {color_counts[tuple(cyan)]}")
-        self.assertEqual(color_counts[tuple(white)], 0, f"White count is {color_counts[tuple(white)]}")
+        for name in COLOR_VALUES.keys():
+            self.assertEqual(
+                color_counts[name], 
+                expected_counts[name], 
+                f"{name} count is {color_counts[name]}, expected {expected_counts[name]}"
+            )
 
     def test_hopf_edge_count(self):
         """

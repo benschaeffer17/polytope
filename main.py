@@ -136,7 +136,9 @@ class App:
         if self.shape_name == '24-cell':
             self.model = Cell24Model(blend=blend)
         elif self.shape_name == '120-cell':
-            self.model = Cell120Model(blend=blend)
+            self.model = Cell120Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
+                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
+                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index])
         elif self.shape_name == '600-cell':
             self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
                                       points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],

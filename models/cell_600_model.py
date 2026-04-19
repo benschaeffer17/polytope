@@ -2,6 +2,8 @@ import numpy as np
 from itertools import permutations, combinations
 from .model import Model
 from quaternion import q_mult
+from polytopes import get_600_cell_vertices
+from .color_constants import COLOR_VALUES, COLOR_SEQUENCE
 
 def get_600_cell():
     """
@@ -9,58 +11,17 @@ def get_600_cell():
     The vertices are the 120 elements of the binary icosahedral group.
     """
     phi = (1 + np.sqrt(5)) / 2
-    vertices = set()
-
-    # 8 vertices of the form (±1, 0, 0, 0)
-    for i in range(4):
-        v = [0, 0, 0, 0]
-        v[i] = 1
-        vertices.add(tuple(v))
-        v[i] = -1
-        vertices.add(tuple(v))
-
-    # 16 vertices of the form 1/2 * (±1, ±1, ±1, ±1)
-    for i in range(16):
-        v = [0.5, 0.5, 0.5, 0.5]
-        if (i >> 0) & 1: v[0] *= -1
-        if (i >> 1) & 1: v[1] *= -1
-        if (i >> 2) & 1: v[2] *= -1
-        if (i >> 3) & 1: v[3] *= -1
-        vertices.add(tuple(v))
-
-    # 96 vertices from even permutations of (0, ±1/2, ±1/(2φ), ±φ/2)
-    vals = [0, 0.5, 0.5 / phi, 0.5 * phi]
-    for p_vals in set(permutations(vals)):
-        p = list(p_vals)
-        # Check for even permutation
-        inversions = 0
-        for i in range(len(p)):
-            for j in range(i + 1, len(p)):
-                # Create a temporary list for comparison to handle the case where p[i] == p[j]
-                temp_p = list(p)
-                if temp_p[i] > temp_p[j]:
-                    inversions += 1
-        
-        if inversions % 2 == 0:
-            for i in range(8): # signs for non-zero elements
-                v = list(p)
-                k = 0
-                for j in range(4):
-                    if v[j] != 0:
-                        if (i >> k) & 1:
-                            v[j] *= -1
-                        k += 1
-                vertices.add(tuple(v))
-                
-    vertices = np.array(list(vertices), dtype=np.float32)
+    vertices = get_600_cell_vertices()
     
     # Edges
+    from scipy.spatial import cKDTree
+    tree = cKDTree(vertices)
+    edge_length = 1/phi
+    pairs = tree.query_pairs(edge_length + 1e-3)
     edges = []
-    edge_length_sq = (1/phi)**2
-    for i, j in combinations(range(len(vertices)), 2):
-        v1 = vertices[i]
-        v2 = vertices[j]
-        dist_sq = np.sum((v1 - v2)**2)
+    edge_length_sq = edge_length**2
+    for i, j in pairs:
+        dist_sq = np.sum((vertices[i] - vertices[j])**2)
         if np.isclose(dist_sq, edge_length_sq, atol=1e-2):
             edges.append((i, j))
 
@@ -74,22 +35,9 @@ class Cell600Model(Model):
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15
 
-        self.color_values = {
-            "RED": [1.0, 0.0, 0.0],
-            "BLUE": [0.0, 0.0, 1.0],
-            "GREEN": [0.0, 1.0, 0.0],
-            "YELLOW": [1.0, 1.0, 0.0],
-            "PURPLE": [1.0, 0.0, 1.0],
-            "CYAN": [0.0, 1.0, 1.0],
-            "WHITE": [1.0, 1.0, 1.0],
-            "BLACK": [0.0, 0.0, 0.0],
-            "ORANGE": [1.0, 0.5, 0.0],
-            "PINK": [1.0, 0.75, 0.8],
-            "LIME": [0.75, 1.0, 0.0],
-            "ROSE": [1.0, 0.0, 0.5]
-        }
+        self.color_values = COLOR_VALUES
         
-        self.color_sequence = ["RED", "CYAN", "LIME", "PURPLE", "YELLOW", "BLUE", "ORANGE", "GREEN", "ROSE"]
+        self.color_sequence = COLOR_SEQUENCE
         
         # 1. Base initialization (Adjacency, etc)
         self.base_adj = [[] for _ in range(len(self.base_vertices_4d))]
@@ -257,7 +205,8 @@ class Cell600Model(Model):
                 self.edge_colors.append(color_val)
 
         self.edge_colors = np.array(self.edge_colors, dtype=np.float32) if self.edge_colors else np.array([], dtype=np.float32)
-        self.edge_width_multipliers = np.array([1.0] * len(self.edges), dtype=np.float32)
+        from .color_constants import get_scaling_multiplier_by_color
+        self.edge_width_multipliers = np.array([get_scaling_multiplier_by_color(color) for color in self.edge_colors], dtype=np.float32) if len(self.edge_colors) > 0 else np.array([], dtype=np.float32)
 
     def _compute_vertex_colors_partition(self):
         color_map = {}
@@ -398,7 +347,7 @@ class Cell600Model(Model):
             fibrations.append(fibration_indices)
 
         for i, fibration in enumerate(fibrations):
-            color = self.color_sequence[(i + 3) % len(self.color_sequence)]
+            color = self.color_sequence[i % len(self.color_sequence)]
             for j in range(len(fibration)):
                 v1 = fibration[j]
                 v2 = fibration[(j + 1) % len(fibration)]

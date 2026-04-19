@@ -22,12 +22,9 @@ def get_24_cell():
     
     vertices = np.array(list(vertices), dtype=np.float32)
 
-    edges = []
-    for i, j in combinations(range(len(vertices)), 2):
-        v1 = vertices[i]
-        v2 = vertices[j]
-        if np.linalg.norm(v1 - v2) < 1.5: # sqrt(2) is approx 1.414
-            edges.append((i, j))
+    from scipy.spatial import cKDTree
+    tree = cKDTree(vertices)
+    edges = list(tree.query_pairs(1.45))
             
     return vertices, edges
 
@@ -58,18 +55,12 @@ class Cell24Model(Model):
         self.colors = np.array(self.colors, dtype=np.float32)
 
         self.edge_colors = []
-        self.edge_width_multipliers = []
         
         green = [0.0, 1.0, 0.0, self.blend]
         red = [1.0, 0.0, 0.0, self.blend]
         blue = [0.0, 0.0, 1.0, self.blend]
         yellow = [1.0, 1.0, 0.0, self.blend]
         purple = [1.0, 0.0, 1.0, self.blend]
-
-        width_multipliers = {
-            "red": 1.2, "green": 1.15, "blue": 1.1,
-            "yellow": 1.05, "purple": 1.0
-        }
 
         for i, j in self.edges:
             is_i_inner = i in v_inner_indices
@@ -81,22 +72,17 @@ class Cell24Model(Model):
 
             if is_i_inner and is_j_inner:
                 self.edge_colors.append(green)
-                self.edge_width_multipliers.append(width_multipliers["green"])
             elif (is_i_inner and is_j_middle) or (is_i_middle and is_j_inner):
                 self.edge_colors.append(red)
-                self.edge_width_multipliers.append(width_multipliers["red"])
             elif is_i_middle and is_j_middle:
                 self.edge_colors.append(blue)
-                self.edge_width_multipliers.append(width_multipliers["blue"])
             elif (is_i_middle and is_j_outer) or (is_i_outer and is_j_middle):
                 self.edge_colors.append(yellow)
-                self.edge_width_multipliers.append(width_multipliers["yellow"])
             elif is_i_outer and is_j_outer:
                 self.edge_colors.append(purple)
-                self.edge_width_multipliers.append(width_multipliers["purple"])
             else:
                 self.edge_colors.append([1.0, 1.0, 1.0, self.blend])
-                self.edge_width_multipliers.append(1.0)
         
         self.edge_colors = np.array(self.edge_colors, dtype=np.float32)
-        self.edge_width_multipliers = np.array(self.edge_width_multipliers, dtype=np.float32)
+        from .color_constants import get_scaling_multiplier_by_color
+        self.edge_width_multipliers = np.array([get_scaling_multiplier_by_color(c) for c in self.edge_colors], dtype=np.float32)
