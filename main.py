@@ -44,7 +44,7 @@ class App:
         self.edge_modes = ['bfs', 'icosi', 'hopf', 'zome']
         self.edge_mode_index = 0
 
-        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         self.points_mode_index = 5
 
         self.slice_modes = ['at_least', 'exact', 'adjacent', 'echo']
