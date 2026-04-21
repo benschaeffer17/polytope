@@ -192,8 +192,10 @@ class App:
         self.nav.apply_rotation()
 
         rotation_matrix = self.rotator.get_rotation_matrix(self.rotation_plane, self.angle_4d)
-        plane_indices = self.rotator.planes[self.rotation_plane]
-        fixed_vertices_indices = {i for i, v in enumerate(self.model.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
+        fixed_vertices_indices = set()
+        if self.rotation_plane in (0, 1):
+            plane_indices = self.rotator.modes[self.rotation_plane][0]
+            fixed_vertices_indices = {i for i, v in enumerate(self.model.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
 
         projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
@@ -211,7 +213,7 @@ class App:
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
         
         hud_lines = [
-            f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<2} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
+            f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
             f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}"
         ]
         self.hud.draw(hud_lines)
