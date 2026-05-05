@@ -43,8 +43,8 @@ def get_120_cell():
 
 class Cell120Model(Model):
     def __init__(self, is_vertex_centered=False, edge_coloring="bfs", points_mode=None,
-                 vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs"):
-        super().__init__(blend=blend)
+                 vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs", cell_contraction=1.0):
+        super().__init__(blend=blend, cell_contraction=cell_contraction)
         self.base_vertices_4d, self.base_edges = get_120_cell()
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15
@@ -226,6 +226,8 @@ class Cell120Model(Model):
 
         self.edge_colors = np.array(self.edge_colors, dtype=np.float32) if self.edge_colors else np.array([], dtype=np.float32)
         self.edge_width_multipliers = np.array([get_scaling_multiplier_by_color(color) for color in self.edge_colors], dtype=np.float32) if len(self.edge_colors) > 0 else np.array([], dtype=np.float32)
+
+        self._generate_triangles()
 
     def _compute_vertex_colors_partition(self):
         color_map = {}

@@ -128,3 +128,36 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
 
             glColor4fv(color)
             draw_cylinder(p1, p2, radius)
+
+def draw_triangles(vertices, triangles, colors, normals=None):
+    """
+    Draws lit triangles for the cell faces.
+    """
+    glEnable(GL_LIGHTING)
+    glBegin(GL_TRIANGLES)
+    
+    for i, tri in enumerate(triangles):
+        v0 = vertices[tri[0]]
+        v1 = vertices[tri[1]]
+        v2 = vertices[tri[2]]
+        
+        if normals is not None:
+            normal = normals[i]
+        else:
+            vec1 = v1 - v0
+            vec2 = v2 - v0
+            normal = np.cross(vec1, vec2)
+            norm_length = np.linalg.norm(normal)
+            if norm_length > 1e-6:
+                normal = normal / norm_length
+            else:
+                normal = np.array([0.0, 0.0, 1.0])
+                
+        glNormal3fv(normal)
+        glColor4fv(colors[i])
+        
+        glVertex3fv(v0)
+        glVertex3fv(v1)
+        glVertex3fv(v2)
+        
+    glEnd()

@@ -29,12 +29,13 @@ def get_24_cell():
     return vertices, edges
 
 class Cell24Model(Model):
-    def __init__(self, blend=1.0):
-        super().__init__(blend=blend)
+    def __init__(self, blend=1.0, cell_contraction=1.0):
+        super().__init__(blend=blend, cell_contraction=cell_contraction)
         self.vertices_4d, self.edges = get_24_cell()
         self.style.point_style.relative_size = 1.0
         self.style.line_style.relative_width = 0.45
         self._setup_coloring()
+        self._generate_triangles()
 
     def _setup_coloring(self):
         v_inner_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == -1}

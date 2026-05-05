@@ -59,6 +59,10 @@ class App:
         self.d_values = [1.0, 1.2, 1.5, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]
         self.d_index = 3
 
+        self.cell_contraction_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        self.cell_contraction_index = 9
+        self.draw_triangles = False
+
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -92,6 +96,8 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_S, self.toggle_slice_mode)
         self.ui.register_keyboard_callback(glfw.KEY_F, self.toggle_point_set)
         self.ui.register_keyboard_callback(glfw.KEY_Q, self.toggle_blend)
+        self.ui.register_keyboard_callback(glfw.KEY_B, self.toggle_draw_triangles)
+        self.ui.register_keyboard_callback(glfw.KEY_G, self.toggle_cell_contraction)
 
     def zoom_in(self, *args):
         new_dist = self.camera_distance / self.ZOOM_FACTOR
@@ -130,19 +136,29 @@ class App:
         self.blend_index = (self.blend_index + 1) % len(self.blend_values)
         self.load_shape()
 
+    def toggle_draw_triangles(self, *args):
+        self.draw_triangles = not self.draw_triangles
+
+    def toggle_cell_contraction(self, *args):
+        self.cell_contraction_index = (self.cell_contraction_index + 1) % len(self.cell_contraction_values)
+        self.load_shape()
+
     def load_shape(self):
         current_style = self.model.style if self.model else None
         blend = self.blend_values[self.blend_index]
+        contraction = self.cell_contraction_values[self.cell_contraction_index]
         if self.shape_name == '24-cell':
-            self.model = Cell24Model(blend=blend)
+            self.model = Cell24Model(blend=blend, cell_contraction=contraction)
         elif self.shape_name == '120-cell':
             self.model = Cell120Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
                                       points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
-                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index])
+                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index],
+                                      cell_contraction=contraction)
         elif self.shape_name == '600-cell':
             self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
                                       points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
-                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index])
+                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index],
+                                      cell_contraction=contraction)
         if current_style:
             self.model.style = current_style
 
@@ -200,6 +216,18 @@ class App:
         projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
         
+        # Draw the cell triangles if activated
+        if self.draw_triangles and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
+            projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
+            
+            # Calculate the 3D normals by projecting and rotating the generated 4D normals
+            rotated_normals = self.model.triangle_normals_4d @ rotation_matrix.T
+            normals_3d = rotated_normals[:, 0:3]
+            norms = np.linalg.norm(normals_3d, axis=1, keepdims=True)
+            normals_3d = np.divide(normals_3d, norms, out=np.zeros_like(normals_3d), where=norms>1e-6)
+            
+            drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=normals_3d)
+
         glPopMatrix()
 
         if self.rotation_speed_level > 0:
@@ -214,7 +242,8 @@ class App:
         
         hud_lines = [
             f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
-            f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}"
+            f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}",
+            f"Tris: {'ON' if self.draw_triangles else 'OFF':<3} | CellCont: {self.cell_contraction_values[self.cell_contraction_index]:3.1f}"
         ]
         self.hud.draw(hud_lines)
 
