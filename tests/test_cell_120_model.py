@@ -68,5 +68,13 @@ class Test120Cell(unittest.TestCase):
             d_sq = np.sum((vertices[i] - vertices[j])**2)
             self.assertAlmostEqual(d_sq, dist_sq, places=5)
             
+    def test_triangles_count(self):
+        """
+        Tests that the 120-cell is triangulated correctly into 7200 triangles.
+        120 cells * 12 pentagonal sides * 5 triangles per side = 7200.
+        """
+        model = Cell120Model()
+        self.assertEqual(len(model.triangles), 7200)
+
 if __name__ == '__main__':
     unittest.main()
