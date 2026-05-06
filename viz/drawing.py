@@ -131,33 +131,59 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
 
 def draw_triangles(vertices, triangles, colors, normals=None):
     """
-    Draws lit triangles for the cell faces.
+    Draws lit triangles for the cell faces using extremely fast Vertex Arrays.
     """
+    if len(triangles) == 0:
+        return
+
+    # Convert inputs to numpy arrays
+    vertices = np.asarray(vertices, dtype=np.float32)
+    triangles = np.asarray(triangles, dtype=np.int32)
+    colors = np.asarray(colors, dtype=np.float32)
+
+    # Extract the actual 3D vertices for every triangle
+    # Shape becomes (num_triangles, 3 vertices, 3 coordinates)
+    tri_verts = vertices[triangles]
+
+    # Duplicate the per-triangle color for each of its 3 vertices
+    # Shape becomes (num_triangles, 3 vertices, 4 color_channels)
+    tri_colors = np.repeat(colors[:, np.newaxis, :], 3, axis=1)
+
+    if normals is not None:
+        normals = np.asarray(normals, dtype=np.float32)
+        # Duplicate the per-triangle normal for each of its 3 vertices
+        tri_normals = np.repeat(normals[:, np.newaxis, :], 3, axis=1)
+    else:
+        # Fallback if normals aren't provided (vectorized cross product per triangle)
+        vec1 = tri_verts[:, 1, :] - tri_verts[:, 0, :]
+        vec2 = tri_verts[:, 2, :] - tri_verts[:, 0, :]
+        calc_normals = np.cross(vec1, vec2)
+        norms = np.linalg.norm(calc_normals, axis=1, keepdims=True)
+        calc_normals = np.divide(calc_normals, norms, out=np.zeros_like(calc_normals), where=norms>1e-6)
+        tri_normals = np.repeat(calc_normals[:, np.newaxis, :], 3, axis=1)
+
+    # Flatten to contiguous C-arrays for PyOpenGL
+    tri_verts_flat = np.ascontiguousarray(tri_verts.reshape(-1, 3))
+    tri_colors_flat = np.ascontiguousarray(tri_colors.reshape(-1, 4))
+    tri_normals_flat = np.ascontiguousarray(tri_normals.reshape(-1, 3))
+
     glEnable(GL_LIGHTING)
-    glBegin(GL_TRIANGLES)
     
-    for i, tri in enumerate(triangles):
-        v0 = vertices[tri[0]]
-        v1 = vertices[tri[1]]
-        v2 = vertices[tri[2]]
-        
-        if normals is not None:
-            normal = normals[i]
-        else:
-            vec1 = v1 - v0
-            vec2 = v2 - v0
-            normal = np.cross(vec1, vec2)
-            norm_length = np.linalg.norm(normal)
-            if norm_length > 1e-6:
-                normal = normal / norm_length
-            else:
-                normal = np.array([0.0, 0.0, 1.0])
-                
-        glNormal3fv(normal)
-        glColor4fv(colors[i])
-        
-        glVertex3fv(v0)
-        glVertex3fv(v1)
-        glVertex3fv(v2)
-        
-    glEnd()
+    # Enable Client States
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glEnableClientState(GL_NORMAL_ARRAY)
+    glEnableClientState(GL_COLOR_ARRAY)
+
+    # Pass the entire arrays to the graphics card
+    glVertexPointer(3, GL_FLOAT, 0, tri_verts_flat)
+    glNormalPointer(GL_FLOAT, 0, tri_normals_flat)
+    glColorPointer(4, GL_FLOAT, 0, tri_colors_flat)
+
+    # Draw all triangles in a single massive driver call!
+    glDrawArrays(GL_TRIANGLES, 0, len(tri_verts_flat))
+
+    # Disable Client States to leave OpenGL state clean
+    glDisableClientState(GL_VERTEX_ARRAY)
+    glDisableClientState(GL_NORMAL_ARRAY)
+    glDisableClientState(GL_COLOR_ARRAY)
+

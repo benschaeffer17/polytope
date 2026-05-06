@@ -105,5 +105,13 @@ class Test600Cell(unittest.TestCase):
         for i in range(len(model.vertices_4d)):
             self.assertEqual(len(adj[i]), 12)
 
+    def test_triangle_count(self):
+        """
+        Tests that the 600-cell has exactly 2400 triangles (600 cells * 4 triangles).
+        """
+        model = Cell600Model()
+        model._generate_triangles()
+        self.assertEqual(len(model.triangles), 2400)
+
 if __name__ == '__main__':
     unittest.main()

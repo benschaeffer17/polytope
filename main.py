@@ -220,13 +220,12 @@ class App:
         if self.draw_triangles and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
             projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
             
-            # Calculate the 3D normals by projecting and rotating the generated 4D normals
-            rotated_normals = self.model.triangle_normals_4d @ rotation_matrix.T
-            normals_3d = rotated_normals[:, 0:3]
-            norms = np.linalg.norm(normals_3d, axis=1, keepdims=True)
-            normals_3d = np.divide(normals_3d, norms, out=np.zeros_like(normals_3d), where=norms>1e-6)
-            
-            drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=normals_3d)
+            # We explicitly pass normals=None to force the draw_triangles method to 
+            # calculate the exact 3D orthogonal normals using the cross product of the 
+            # projected 3D triangle edges. Projecting a 4D normal and dropping the W 
+            # coordinate results in a broken vector that does not match the 3D geometry,
+            # causing OpenGL to shade the faces pitch black.
+            drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
 
         glPopMatrix()
 
@@ -257,6 +256,7 @@ class App:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
         self.ui.run(self)
 
 if __name__ == '__main__':
