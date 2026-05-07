@@ -43,8 +43,9 @@ def get_120_cell():
 
 class Cell120Model(Model):
     def __init__(self, is_vertex_centered=False, edge_coloring="bfs", points_mode=None,
-                 vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs", cell_contraction=1.0):
-        super().__init__(blend=blend, cell_contraction=cell_contraction)
+                 vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs", cell_contraction=1.0, cell_coloring="hopf"):
+        from quaternion import order10
+        super().__init__(blend=blend, cell_contraction=cell_contraction, cell_coloring=cell_coloring, hopf_generator=order10)
         self.base_vertices_4d, self.base_edges = get_120_cell()
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15

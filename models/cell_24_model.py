@@ -29,8 +29,8 @@ def get_24_cell():
     return vertices, edges
 
 class Cell24Model(Model):
-    def __init__(self, blend=1.0, cell_contraction=1.0):
-        super().__init__(blend=blend, cell_contraction=cell_contraction)
+    def __init__(self, blend=1.0, cell_contraction=1.0, cell_coloring="hopf"):
+        super().__init__(blend=blend, cell_contraction=cell_contraction, cell_coloring=cell_coloring, hopf_generator=np.array([0.0, 1.0, 0.0, 0.0]))
         self.vertices_4d, self.edges = get_24_cell()
         self.style.point_style.relative_size = 1.0
         self.style.line_style.relative_width = 0.45

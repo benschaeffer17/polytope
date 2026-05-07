@@ -3,7 +3,7 @@ import numpy as np
 from viz.style import Style
 
 class Model:
-    def __init__(self, blend=1.0, cell_contraction=1.0):
+    def __init__(self, blend=1.0, cell_contraction=1.0, cell_coloring="default", hopf_generator=None):
         self.vertices_4d = None
         self.edges = None
         self.colors = None
@@ -12,6 +12,9 @@ class Model:
         self.edge_width_multipliers = None
         self.blend = blend
         self.cell_contraction = cell_contraction
+        self.cell_coloring = cell_coloring
+        self.hopf_generator = hopf_generator
+        self.cell_fibers = {}
         
         self.triangle_vertices_4d = None
         self.triangles = None
@@ -71,7 +74,49 @@ class Model:
         t_norms = []
         t_colors = []
         
-        light_yellow = [1.0, 1.0, 0.5, self.blend]
+        # -------------------------------------------------------------------------
+        # Dynamic Hopf Fibration Cell Clustering
+        # -------------------------------------------------------------------------
+        # If hopf cell coloring is enabled, we map the center of each 3D cell
+        # to S^2 using the Hopf map h(q) = q * V * q_conjugate. 
+        # Cells that map to the same point on S^2 belong to the same fiber.
+        cell_colors = []
+        if self.cell_coloring == "hopf":
+            from quaternion import q_mult, q_conjugate
+            from .color_constants import COLOR_SEQUENCE, COLOR_VALUES
+            
+            # Use provided generator or fallback to `i` axis
+            if self.hopf_generator is not None:
+                gen = self.hopf_generator
+                v_quat = np.array([0.0, gen[1], gen[2], gen[3]])
+                norm = np.linalg.norm(v_quat)
+                v_quat = v_quat / norm if norm > 1e-6 else np.array([0.0, 1.0, 0.0, 0.0])
+            else:
+                v_quat = np.array([0.0, 1.0, 0.0, 0.0])
+                
+            mapped_centers = []
+            for cell_v_indices in cells:
+                c = np.mean(vertices[list(cell_v_indices)], axis=0)
+                c_norm = np.linalg.norm(c)
+                c = c / c_norm if c_norm > 1e-6 else np.array([1.0, 0.0, 0.0, 0.0])
+                mapped = q_mult(q_mult(c, v_quat), q_conjugate(c))[1:]
+                mapped_centers.append(mapped)
+                
+            mapped_centers = np.array(mapped_centers)
+            rounded = np.round(mapped_centers, 3)
+            unique_pts, inverse = np.unique(rounded, axis=0, return_inverse=True)
+            
+            # Map each cell to its fiber ID and assign a color
+            for i, fiber_id in enumerate(inverse):
+                sorted_tuple = tuple(sorted(list(cells[i])))
+                self.cell_fibers[sorted_tuple] = fiber_id
+                
+                color_name = COLOR_SEQUENCE[fiber_id % len(COLOR_SEQUENCE)]
+                color_val = COLOR_VALUES[color_name] + [self.blend]
+                cell_colors.append(color_val)
+        else:
+            light_yellow = [1.0, 1.0, 0.5, self.blend]
+            cell_colors = [light_yellow] * len(cells)
 
         for i, cell_v_indices in enumerate(cells):
             cell_v_indices = list(cell_v_indices)
@@ -149,7 +194,7 @@ class Model:
                         normal = np.array([0.0, 0.0, 0.0, 0.0])
                         
                     t_norms.append(normal)
-                    t_colors.append(light_yellow)
+                    t_colors.append(cell_colors[i])
                 else:
                     # For complex polygons (e.g., pentagons in the 120-cell),
                     # create triangles by connecting the face center to each sequential edge.
@@ -169,7 +214,7 @@ class Model:
                             normal = np.array([0.0, 0.0, 0.0, 0.0])
                             
                         t_norms.append(normal)
-                        t_colors.append(light_yellow)
+                        t_colors.append(cell_colors[i])
 
         self.triangle_vertices_4d = np.array(t_verts, dtype=np.float32)
         self.triangles = t_tris
