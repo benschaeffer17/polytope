@@ -5,6 +5,11 @@ phi = (1 + np.sqrt(5)) / 2
 order6 = np.array([0.5, 0.5, 0.5, 0.5])
 order10 = np.array([phi / 2, 0.5, 1 / (2*phi), 0])
 
+q_identity = np.array([1.0, 0.0, 0.0, 0.0])
+hopf_600_L = np.array([(1/phi) / 2, 0.5, 0.0, -phi / 2])
+hopf_600_R = np.array([0.5, -0.5, 0.5, 0.5])
+hopf_24_R = np.array([0.0, 1.0, 0.0, 0.0])
+
 def q_mult(q1, q2):
     """
     Multiplies two quaternions.

@@ -30,7 +30,8 @@ def get_24_cell():
 
 class Cell24Model(Model):
     def __init__(self, blend=1.0, cell_contraction=1.0, cell_coloring="hopf"):
-        super().__init__(blend=blend, cell_contraction=cell_contraction, cell_coloring=cell_coloring, hopf_generator=np.array([0.0, 1.0, 0.0, 0.0]))
+        from quaternion import q_identity, hopf_24_R
+        super().__init__(blend=blend, cell_contraction=cell_contraction, cell_coloring=cell_coloring, hopf_L=q_identity, hopf_R=hopf_24_R)
         self.vertices_4d, self.edges = get_24_cell()
         self.style.point_style.relative_size = 1.0
         self.style.line_style.relative_width = 0.45
