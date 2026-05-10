@@ -85,6 +85,7 @@ class UserInterface:
         self.keyboard_callbacks = {}
         self.mouse_button_callbacks = {}
         self.cursor_pos_callback = None
+        self.any_key_callback = None
         self.draw_func = None
         self.frame_count = 0
         self.last_time = glfw.get_time()
@@ -100,6 +101,9 @@ class UserInterface:
     def register_keyboard_callback(self, key, func):
         self.keyboard_callbacks[key] = func
 
+    def register_any_key_callback(self, func):
+        self.any_key_callback = func
+
     def register_mouse_button_callback(self, button, func):
         self.mouse_button_callbacks[button] = func
     
@@ -111,6 +115,8 @@ class UserInterface:
 
     def _key_callback(self, window, key, scancode, action, mods):
         if action == glfw.PRESS or action == glfw.REPEAT:
+            if self.any_key_callback and self.any_key_callback(key):
+                return
             if key in self.keyboard_callbacks:
                 self.keyboard_callbacks[key](window, key, scancode, action, mods)
 

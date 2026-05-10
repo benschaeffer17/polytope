@@ -99,6 +99,19 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_B, self.toggle_draw_triangles)
         self.ui.register_keyboard_callback(glfw.KEY_G, self.toggle_cell_contraction)
         self.ui.register_keyboard_callback(glfw.KEY_N, self.toggle_cell_chain)
+        self.ui.register_keyboard_callback(glfw.KEY_SLASH, self.toggle_help)
+        self.ui.register_any_key_callback(self.any_key_handler)
+
+        self.show_help = False
+
+    def toggle_help(self, *args):
+        self.show_help = not self.show_help
+
+    def any_key_handler(self, key):
+        if self.show_help and key != glfw.KEY_SLASH:
+            self.show_help = False
+            return True
+        return False
 
     def zoom_in(self, *args):
         new_dist = self.camera_distance / self.ZOOM_FACTOR
@@ -193,6 +206,35 @@ class App:
         self.last_frame_time = current_time
 
         width, height = glfw.get_window_size(self.ui.window)
+        
+        if self.show_help:
+            help_lines = [
+                "POLYTOPE VISUALIZER KEYBOARD CONTROLS",
+                "",
+                "V: Toggle render style (Wireframe/Cylinder)",
+                "T: Toggle shape (24-cell, 120-cell, 600-cell)",
+                "P: Toggle recording to WebP video",
+                "1-6: Set 4D rotation plane (XY, XZ, XW, YZ, YW, ZW)",
+                "A: Increase rotation speed",
+                "Z: Decrease rotation speed",
+                "D: Toggle 4D perspective depth (d-value)",
+                "K: Zoom out",
+                "M: Zoom in",
+                "8: Toggle vertex coloring mode",
+                "9: Toggle edge coloring mode",
+                "0: Toggle points mode (filtering geometry)",
+                "S: Toggle slice mode (cutting planes)",
+                "F: Toggle point set (DFS generation)",
+                "Q: Toggle face opacity (blend)",
+                "B: Toggle drawing of 2D face triangles",
+                "G: Toggle 3D cell contraction (spacing out cells)",
+                "N: Cycle through isolated Boerdijk-Coxeter cell chains",
+                "/: Toggle this Help Screen",
+                "ESC: Quit"
+            ]
+            self.hud.draw(help_lines)
+            return
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         aspect_ratio = width / (height if height > 0 else 1)
