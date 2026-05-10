@@ -62,7 +62,7 @@ class App:
         self.cell_contraction_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         self.cell_contraction_index = 9
         self.draw_triangles = False
-
+        self.cell_chain = 0
         self.load_shape()
         
         self.angle_4d = 0.0
@@ -98,6 +98,7 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_Q, self.toggle_blend)
         self.ui.register_keyboard_callback(glfw.KEY_B, self.toggle_draw_triangles)
         self.ui.register_keyboard_callback(glfw.KEY_G, self.toggle_cell_contraction)
+        self.ui.register_keyboard_callback(glfw.KEY_N, self.toggle_cell_chain)
 
     def zoom_in(self, *args):
         new_dist = self.camera_distance / self.ZOOM_FACTOR
@@ -143,6 +144,10 @@ class App:
         self.cell_contraction_index = (self.cell_contraction_index + 1) % len(self.cell_contraction_values)
         self.load_shape()
 
+    def toggle_cell_chain(self, *args):
+        if self.model and self.model.num_chains > 0:
+            self.cell_chain = (self.cell_chain + 1) % (self.model.num_chains + 1)
+
     def load_shape(self):
         current_style = self.model.style if self.model else None
         blend = self.blend_values[self.blend_index]
@@ -169,6 +174,7 @@ class App:
             self.shape_name = '600-cell'
         else:
             self.shape_name = '24-cell'
+        self.cell_chain = 0
         self.load_shape()
 
     def set_rotation_plane(self, plane_index):
@@ -220,12 +226,18 @@ class App:
         if self.draw_triangles and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
             projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
             
+            if self.cell_chain == 0:
+                tris_to_draw = self.model.triangles
+                colors_to_draw = self.model.triangle_colors
+            else:
+                tris_to_draw, _, colors_to_draw = self.model.triangles_by_chain[self.cell_chain - 1]
+
             # We explicitly pass normals=None to force the draw_triangles method to 
             # calculate the exact 3D orthogonal normals using the cross product of the 
             # projected 3D triangle edges. Projecting a 4D normal and dropping the W 
             # coordinate results in a broken vector that does not match the 3D geometry,
             # causing OpenGL to shade the faces pitch black.
-            drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
+            drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
 
         glPopMatrix()
 
@@ -238,11 +250,12 @@ class App:
         render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
+        chain_status = f"{self.cell_chain}/{self.model.num_chains}" if self.cell_chain > 0 else "ALL"
         
         hud_lines = [
             f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
             f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}",
-            f"Tris: {'ON' if self.draw_triangles else 'OFF':<3} | CellCont: {self.cell_contraction_values[self.cell_contraction_index]:3.1f}"
+            f"Tris: {'ON' if self.draw_triangles else 'OFF':<3} | CellCont: {self.cell_contraction_values[self.cell_contraction_index]:3.1f} | Chain: {chain_status:<6}"
         ]
         self.hud.draw(hud_lines)
 

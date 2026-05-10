@@ -1,13 +1,33 @@
 
 import numpy as np
 
+# phi is the golden ratio, foundational to the icosahedral symmetry of the 600-cell and 120-cell
 phi = (1 + np.sqrt(5)) / 2
+
+# order6 is a quaternion of order 6 in the binary icosahedral group (order 3 in SO(4)).
+# It represents a 120-degree rotation.
 order6 = np.array([0.5, 0.5, 0.5, 0.5])
+
+# order10 is a quaternion of order 10 in the binary icosahedral group (order 5 in SO(4)).
+# It represents a 72-degree rotation, forming the foundational cycle of the 120-cell's dodecahedra rings.
 order10 = np.array([phi / 2, 0.5, 1 / (2*phi), 0])
 
 q_identity = np.array([1.0, 0.0, 0.0, 0.0])
+
+# -------------------------------------------------------------------------
+# Boerdijk-Coxeter Helix Generators (600-cell Hopf Fibration)
+# -------------------------------------------------------------------------
+# To generate a perfectly face-adjacent chain of 30 tetrahedra (a Boerdijk-Coxeter helix) 
+# within the 600-cell, we use a specific 4D screw motion: c -> L * c * R.
+# 
+# hopf_600_L is an order-10 quaternion. It provides the "long" twist around the great circle.
 hopf_600_L = np.array([(1/phi) / 2, 0.5, 0.0, -phi / 2])
+
+# hopf_600_R is an order-6 quaternion. It provides the localized "corkscrew" twisting 
+# that forces the path to cleanly enter and exit the alternating tetrahedral faces.
 hopf_600_R = np.array([0.5, -0.5, 0.5, 0.5])
+
+# hopf_24_R is the quaternion `i` (order 4). It generates the 4-cell rings of the 24-cell fibration.
 hopf_24_R = np.array([0.0, 1.0, 0.0, 0.0])
 
 def q_mult(q1, q2):

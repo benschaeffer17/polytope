@@ -43,19 +43,11 @@ class TestHopfFibration(unittest.TestCase):
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 30, "Each 600-cell chain should have exactly 30 cells.")
             # Check if this chain is a perfect equator helix (adjacent cells share faces)
-            is_connected = True
             for k in range(len(chain)):
                 c1 = set(model.cells[chain[k]])
                 c2 = set(model.cells[chain[(k+1) % 30]])
                 shared = len(c1.intersection(c2))
-                if shared != 3:
-                    is_connected = False
-                    break
-            
-            if is_connected:
-                connected_helices_found += 1
-                
-        self.assertTrue(connected_helices_found > 0, "At least one orbit must be a perfect Boerdijk-Coxeter helix sharing 3-vertex faces.")
+                self.assertEqual(shared, 3, f"600-cell adjacent cells in a Boerdijk-Coxeter helix must share a face (3 vertices), but shared {shared}.")
 
     def test_24_cell_hopf_fibration(self):
         """
