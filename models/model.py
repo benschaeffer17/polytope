@@ -340,3 +340,75 @@ class Model:
                     np.array(chain_norms[k], dtype=np.float32),
                     np.array(chain_colors[k], dtype=np.float32)
                 ))
+            
+            self._compute_chain_groupings(centers, chains)
+        else:
+            self.chain_groupings = {"Single": []}
+            self.chain_grouping_names = ["Single"]
+
+    def _compute_chain_groupings(self, centers, chains):
+        # 1. Compute the 2D plane spanning each chain using SVD
+        chain_planes = []
+        for chain in chains:
+            pts = []
+            for idx in chain:
+                c = centers[idx]
+                pts.append(c / np.linalg.norm(c))
+            pts = np.array(pts)
+            U, S, Vh = np.linalg.svd(pts)
+            chain_planes.append(Vh[:2])
+
+        # 2. Find Antipodal Pairs (planes that are perfectly orthogonal, 90 degrees)
+        antipodal_pairs = []
+        matched = set()
+        for i in range(len(chains)):
+            if i in matched: continue
+            best_orthogonality = 1.0
+            best_match = -1
+            
+            for j in range(len(chains)):
+                if i == j: continue
+                # Dot product matrix between basis vectors of the two planes
+                dot_matrix = chain_planes[i] @ chain_planes[j].T
+                orthogonality = np.linalg.norm(dot_matrix, ord=2)
+                
+                if orthogonality < best_orthogonality:
+                    best_orthogonality = orthogonality
+                    best_match = j
+                    
+            # A perfect orthogonal pair will have orthogonality < 1e-5
+            if best_orthogonality < 1e-2:
+                antipodal_pairs.append([i, best_match])
+                matched.add(i)
+                matched.add(best_match)
+                
+        # 3. Find Toroidal Bundles relative to Chain 0 (North Pole)
+        pole_plane = chain_planes[0]
+        distances = []
+        for i in range(len(chain_planes)):
+            dot_matrix = pole_plane @ chain_planes[i].T
+            U, S, Vh = np.linalg.svd(dot_matrix)
+            angle = np.arccos(np.clip(S[0], -1.0, 1.0)) * 180 / np.pi
+            distances.append((i, angle))
+            
+        distances.sort(key=lambda x: x[1])
+        
+        current_angle = -1
+        bundle = []
+        bundles = []
+        for i, angle in distances:
+            if abs(angle - current_angle) > 1.0:
+                if bundle:
+                    bundles.append(bundle)
+                bundle = []
+                current_angle = angle
+            bundle.append(i)
+        if bundle:
+            bundles.append(bundle)
+
+        self.chain_groupings = {
+            "Single": [[i] for i in range(len(chains))],
+            "Antipodal Pairs": antipodal_pairs,
+            "Toroidal Bundles": bundles
+        }
+        self.chain_grouping_names = ["Single", "Antipodal Pairs", "Toroidal Bundles"]

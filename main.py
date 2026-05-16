@@ -99,10 +99,12 @@ class App:
         self.ui.register_keyboard_callback(glfw.KEY_B, self.toggle_draw_triangles)
         self.ui.register_keyboard_callback(glfw.KEY_G, self.toggle_cell_contraction)
         self.ui.register_keyboard_callback(glfw.KEY_N, self.toggle_cell_chain)
+        self.ui.register_keyboard_callback(glfw.KEY_H, self.toggle_chain_grouping)
         self.ui.register_keyboard_callback(glfw.KEY_SLASH, self.toggle_help)
         self.ui.register_any_key_callback(self.any_key_handler)
 
         self.show_help = False
+        self.chain_grouping_mode = 0
 
     def toggle_help(self, *args):
         self.show_help = not self.show_help
@@ -157,9 +159,18 @@ class App:
         self.cell_contraction_index = (self.cell_contraction_index + 1) % len(self.cell_contraction_values)
         self.load_shape()
 
+    def toggle_chain_grouping(self, *args):
+        if self.model and hasattr(self.model, 'chain_groupings'):
+            group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
+            num_modes = len(self.model.chain_grouping_names)
+            self.chain_grouping_mode = (self.chain_grouping_mode + 1) % num_modes
+            self.cell_chain = 0 # reset selection
+
     def toggle_cell_chain(self, *args):
-        if self.model and self.model.num_chains > 0:
-            self.cell_chain = (self.cell_chain + 1) % (self.model.num_chains + 1)
+        if self.model and self.model.num_chains > 0 and hasattr(self.model, 'chain_groupings'):
+            group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
+            num_groups = len(self.model.chain_groupings[group_name])
+            self.cell_chain = (self.cell_chain + 1) % (num_groups + 1)
 
     def load_shape(self):
         current_style = self.model.style if self.model else None
@@ -179,6 +190,10 @@ class App:
                                       cell_contraction=contraction)
         if current_style:
             self.model.style = current_style
+            
+        # Ensure the active cell chain selection is still valid for the newly generated geometry
+        if self.model and self.cell_chain > self.model.num_chains:
+            self.cell_chain = 0
 
     def toggle_shape(self, *args):
         if self.shape_name == '24-cell':
@@ -269,17 +284,16 @@ class App:
             projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
             
             if self.cell_chain == 0:
-                tris_to_draw = self.model.triangles
-                colors_to_draw = self.model.triangle_colors
+                drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
+            elif hasattr(self.model, 'chain_groupings'):
+                group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
+                active_group = self.model.chain_groupings[group_name][self.cell_chain - 1]
+                for chain_idx in active_group:
+                    tris_to_draw, _, colors_to_draw = self.model.triangles_by_chain[chain_idx]
+                    drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
             else:
                 tris_to_draw, _, colors_to_draw = self.model.triangles_by_chain[self.cell_chain - 1]
-
-            # We explicitly pass normals=None to force the draw_triangles method to 
-            # calculate the exact 3D orthogonal normals using the cross product of the 
-            # projected 3D triangle edges. Projecting a 4D normal and dropping the W 
-            # coordinate results in a broken vector that does not match the 3D geometry,
-            # causing OpenGL to shade the faces pitch black.
-            drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
+                drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
 
         glPopMatrix()
 
@@ -292,7 +306,13 @@ class App:
         render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
-        chain_status = f"{self.cell_chain}/{self.model.num_chains}" if self.cell_chain > 0 else "ALL"
+        
+        if hasattr(self.model, 'chain_groupings'):
+            group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
+            num_groups = len(self.model.chain_groupings[group_name])
+            chain_status = f"{self.cell_chain}/{num_groups} ({group_name})" if self.cell_chain > 0 else f"ALL ({group_name})"
+        else:
+            chain_status = f"{self.cell_chain}/{self.model.num_chains}" if self.cell_chain > 0 else "ALL"
         
         hud_lines = [
             f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
