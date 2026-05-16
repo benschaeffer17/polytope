@@ -1,3 +1,4 @@
+"""Module representing polytope geometry and rendering logic."""
 import numpy as np
 
 COLOR_VALUES = {

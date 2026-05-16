@@ -1,3 +1,4 @@
+"""Module representing polytope geometry and rendering logic."""
 import numpy as np
 from .model import Model
 from polytopes import get_600_cell_vertices, get_600_cell_cells
@@ -39,6 +40,7 @@ def get_120_cell():
     return vertices, edges
 
 class Cell120Model(Model):
+    """Base representation class."""
     def __init__(self, is_vertex_centered=False, edge_coloring="bfs", points_mode=None,
                  vertex_coloring="partition", blend=1.0, slice_mode="at_least", point_set="dfs", cell_contraction=1.0, cell_coloring="hopf"):
         from quaternion import q_identity, order10
@@ -51,6 +53,7 @@ class Cell120Model(Model):
         self._finalize_geometry(points_mode, slice_mode, point_set, vertex_coloring, edge_coloring)
 
     def _compute_vertex_colors_partition(self):
+        """Executes internal logic."""
         color_map = {}
         for i, v in enumerate(self.base_vertices_4d):
             if np.sum(np.abs(v)) > 0.9:

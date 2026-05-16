@@ -1,3 +1,4 @@
+"""Module representing core functionality."""
 
 import glfw
 from OpenGL.GL import *
@@ -21,11 +22,13 @@ from models import (
 )
 
 class App:
+    """Base representation class."""
     ZOOM_FACTOR = 1.2
     MIN_ZOOM_FACTOR = 0.3
     MAX_ZOOM_FACTOR = 10.0
 
     def __init__(self, headless=False):
+        """Executes internal logic."""
         self.headless = headless
         self.ui = UserInterface(title="Polytope Visualizer", headless=headless)
         self.nav = Navigator(self.ui)
@@ -108,59 +111,73 @@ class App:
         self.chain_grouping_mode = 0
 
     def toggle_help(self, *args):
+        """Executes internal logic."""
         self.show_help = not self.show_help
 
     def any_key_handler(self, key):
+        """Executes internal logic."""
         if self.show_help and key != glfw.KEY_SLASH:
             self.show_help = False
             return True
         return False
 
     def zoom_in(self, *args):
+        """Executes internal logic."""
         new_dist = self.camera_distance / self.ZOOM_FACTOR
         min_dist = self.default_camera_distance * self.MIN_ZOOM_FACTOR
         self.camera_distance = max(new_dist, min_dist)
 
     def zoom_out(self, *args):
+        """Executes internal logic."""
         new_dist = self.camera_distance * self.ZOOM_FACTOR
         max_dist = self.default_camera_distance * self.MAX_ZOOM_FACTOR
         self.camera_distance = min(new_dist, max_dist)
 
     def toggle_d_value(self, *args):
+        """Executes internal logic."""
         self.d_index = (self.d_index + 1) % len(self.d_values)
 
     def toggle_vertex_mode(self, *args):
+        """Executes internal logic."""
         self.vertex_mode_index = (self.vertex_mode_index + 1) % len(self.vertex_modes)
         self.load_shape()
 
     def toggle_edge_mode(self, *args):
+        """Executes internal logic."""
         self.edge_mode_index = (self.edge_mode_index + 1) % len(self.edge_modes)
         self.load_shape()
 
     def toggle_points_mode(self, *args):
+        """Executes internal logic."""
         self.points_mode_index = (self.points_mode_index + 1) % len(self.points_modes)
         self.load_shape()
 
     def toggle_slice_mode(self, *args):
+        """Executes internal logic."""
         self.slice_mode_index = (self.slice_mode_index + 1) % len(self.slice_modes)
         self.load_shape()
 
     def toggle_point_set(self, *args):
+        """Executes internal logic."""
         self.point_set_index = (self.point_set_index + 1) % len(self.point_sets)
         self.load_shape()
 
     def toggle_blend(self, *args):
+        """Executes internal logic."""
         self.blend_index = (self.blend_index + 1) % len(self.blend_values)
         self.load_shape()
 
     def toggle_draw_triangles(self, *args):
+        """Executes internal logic."""
         self.draw_triangles = not self.draw_triangles
 
     def toggle_cell_contraction(self, *args):
+        """Executes internal logic."""
         self.cell_contraction_index = (self.cell_contraction_index + 1) % len(self.cell_contraction_values)
         self.load_shape()
 
     def toggle_chain_grouping(self, *args):
+        """Executes internal logic."""
         if self.model and hasattr(self.model, 'chain_groupings'):
             group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
             num_modes = len(self.model.chain_grouping_names)
@@ -168,12 +185,14 @@ class App:
             self.cell_chain = 0 # reset selection
 
     def toggle_cell_chain(self, *args):
+        """Executes internal logic."""
         if self.model and self.model.num_chains > 0 and hasattr(self.model, 'chain_groupings'):
             group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
             num_groups = len(self.model.chain_groupings[group_name])
             self.cell_chain = (self.cell_chain + 1) % (num_groups + 1)
 
     def load_shape(self):
+        """Executes internal logic."""
         current_style = self.model.style if self.model else None
         blend = self.blend_values[self.blend_index]
         contraction = self.cell_contraction_values[self.cell_contraction_index]
@@ -197,6 +216,7 @@ class App:
             self.cell_chain = 0
 
     def toggle_shape(self, *args):
+        """Executes internal logic."""
         if self.shape_name == '24-cell':
             self.shape_name = '120-cell'
         elif self.shape_name == '120-cell':
@@ -207,14 +227,18 @@ class App:
         self.load_shape()
 
     def set_rotation_plane(self, plane_index):
+        """Executes internal logic."""
         self.rotation_plane = plane_index
 
     def increase_rotation_speed(self, *args):
+        """Executes internal logic."""
         self.rotation_speed_level = min(10, self.rotation_speed_level + 1)
     def decrease_rotation_speed(self, *args):
+        """Executes internal logic."""
         self.rotation_speed_level = max(0, self.rotation_speed_level - 1)
 
     def draw(self):
+        """Executes internal logic."""
         current_time = glfw.get_time()
         delta_time = (current_time - self.last_frame_time) if self.last_frame_time > 0 else 0.0
         if self.capture.recording:
@@ -323,6 +347,7 @@ class App:
         self.hud.draw(hud_lines)
 
     def setup_gl(self):
+        """Executes internal logic."""
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
@@ -335,6 +360,7 @@ class App:
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
 
     def run(self):
+        """Executes internal logic."""
         self.setup_gl()
         self.ui.run(self)
 

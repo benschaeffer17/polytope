@@ -1,3 +1,4 @@
+"""Module representing polytope geometry and rendering logic."""
 
 from .cell_24_model import Cell24Model
 from .cell_120_model import Cell120Model

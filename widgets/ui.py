@@ -1,15 +1,19 @@
+"""Module representing core functionality."""
 
 import glfw
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
 class HeadsUpDisplay:
+    """Base representation class."""
     def __init__(self, window):
+        """Executes internal logic."""
         self.window = window
         self.font = GLUT_STROKE_MONO_ROMAN
         self.text_scale = 0.06
 
     def draw(self, nav_state):
+        """Executes internal logic."""
         glDisable(GL_LIGHTING)
         glDisable(GL_DEPTH_TEST)
         glDepthMask(GL_FALSE)
@@ -70,7 +74,9 @@ class HeadsUpDisplay:
 
 
 class UserInterface:
+    """Base representation class."""
     def __init__(self, title="Polytope Visualizer", width=800, height=600, headless=False):
+        """Executes internal logic."""
         if not glfw.init():
             raise Exception("GLFW can't be initialized")
 
@@ -103,21 +109,27 @@ class UserInterface:
         self.register_keyboard_callback(glfw.KEY_ESCAPE, self.close_window)
 
     def register_keyboard_callback(self, key, func):
+        """Executes internal logic."""
         self.keyboard_callbacks[key] = func
 
     def register_any_key_callback(self, func):
+        """Executes internal logic."""
         self.any_key_callback = func
 
     def register_mouse_button_callback(self, button, func):
+        """Executes internal logic."""
         self.mouse_button_callbacks[button] = func
 
     def register_cursor_pos_callback(self, func):
+        """Executes internal logic."""
         self.cursor_pos_callback = func
 
     def register_draw_function(self, func):
+        """Executes internal logic."""
         self.draw_func = func
 
     def _key_callback(self, window, key, scancode, action, mods):
+        """Executes internal logic."""
         if action == glfw.PRESS or action == glfw.REPEAT:
             if self.any_key_callback and self.any_key_callback(key):
                 return
@@ -125,17 +137,21 @@ class UserInterface:
                 self.keyboard_callbacks[key](window, key, scancode, action, mods)
 
     def _mouse_button_callback(self, window, button, action, mods):
+        """Executes internal logic."""
         if button in self.mouse_button_callbacks:
             self.mouse_button_callbacks[button](window, button, action, mods)
 
     def _cursor_pos_callback(self, window, xpos, ypos):
+        """Executes internal logic."""
         if self.cursor_pos_callback:
             self.cursor_pos_callback(window, xpos, ypos)
 
     def close_window(self, *args):
+        """Executes internal logic."""
         glfw.set_window_should_close(self.window, True)
 
     def run(self, app=None):
+        """Executes internal logic."""
         while not glfw.window_should_close(self.window):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -164,10 +180,11 @@ class UserInterface:
         pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
         image = Image.frombytes("RGB", (width, height), pixels)
         # OpenGL's origin is bottom-left, PIL's is top-left, so flip vertically
-        return image.transpose(Image.FLIP_TOP_BOTTOM)
+        return image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
 if __name__ == '__main__':
     def draw():
+        """Executes internal logic."""
         # A simple spinning triangle for testing
         glBegin(GL_TRIANGLES)
         glColor3f(1.0, 0.0, 0.0)

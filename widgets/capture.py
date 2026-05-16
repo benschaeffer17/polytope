@@ -1,3 +1,4 @@
+"""Module representing core functionality."""
 
 import os
 import glfw
@@ -5,13 +6,16 @@ from OpenGL.GL import *
 from PIL import Image
 
 class Capture:
+    """Base representation class."""
     def __init__(self, window):
+        """Executes internal logic."""
         self.window = window
         self.recording = False
         self.frame_idx = 0
         self.movie_dir = "polymovie"
 
     def toggle_recording(self, *args):
+        """Executes internal logic."""
         self.recording = not self.recording
         if self.recording:
             self.frame_idx = 0
@@ -22,10 +26,11 @@ class Capture:
                     os.remove(os.path.join(self.movie_dir, f))
 
     def capture_frame(self):
+        """Executes internal logic."""
         width, height = glfw.get_framebuffer_size(self.window)
         glReadBuffer(GL_BACK)
         pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
         image = Image.frombytes("RGB", (width, height), pixels)
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        image = image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         image.save(os.path.join(self.movie_dir, f"frame_{self.frame_idx:04d}.jpg"), "JPEG", quality=90)
         self.frame_idx += 1

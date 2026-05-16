@@ -1,9 +1,12 @@
+"""Module representing polytope geometry and rendering logic."""
 
 import numpy as np
 from viz.style import Style
 
 class Model:
+    """Base representation class."""
     def __init__(self, blend=1.0, cell_contraction=1.0, cell_coloring="default", hopf_L=None, hopf_R=None):
+        """Executes internal logic."""
         self.vertices_4d = None
         self.edges = None
         self.colors = None
@@ -16,6 +19,24 @@ class Model:
         self.hopf_L = hopf_L
         self.hopf_R = hopf_R
         self.cell_fibers = {}
+        
+        # Abstract fields initialized by concrete subclasses or lifecycle methods
+        self.base_vertices_4d = np.array([])
+        self.base_edges = []
+        self.base_adj = []
+        self.base_edge_map = {}
+        self.start_vertices = set()
+        self.vertex_depths = {}
+        self.distance_depths = {}
+        self.hopf_depths = {}
+        self.vertex_color_maps = {}
+        self.edge_color_maps = {}
+        self.color_values = {}
+        self.color_sequence = []
+        self.cell_chains = []
+        self.cells = []
+        self.chain_groupings = []
+        self.chain_grouping_names = []
 
         self.triangle_vertices_4d = None
         self.triangles = None
@@ -26,6 +47,7 @@ class Model:
         self.triangles_by_chain = []
 
     def _initialize_base_geometry(self, is_vertex_centered):
+        """Executes internal logic."""
         from .color_constants import COLOR_VALUES, COLOR_SEQUENCE
         self.style.point_style.relative_size = 0.5
         self.style.line_style.relative_width = 0.15
@@ -59,6 +81,7 @@ class Model:
                 self.base_vertices_4d = self.base_vertices_4d - translation_vector
 
     def _compute_base_depths(self, start_mode):
+        """Executes internal logic."""
         # 4. Find start vertices
         north_pole = np.array([0.0, 0.0, 0.0, 1.0])
         self.start_vertices = set()
@@ -139,6 +162,7 @@ class Model:
                 visited_vertices.add(closest_idx)
 
     def _compute_all_color_maps(self):
+        """Executes internal logic."""
         self.vertex_color_maps["bfs"] = self._compute_vertex_colors_bfs()
         self.vertex_color_maps["distance"] = self._compute_vertex_colors_distance()
         self.vertex_color_maps["hopf"] = self._compute_vertex_colors_hopf()
@@ -150,6 +174,7 @@ class Model:
         }
 
     def _finalize_geometry(self, points_mode, slice_mode, point_set, vertex_coloring, edge_coloring):
+        """Executes internal logic."""
         # 7. Cull vertices and edges based on points_mode
         kept_vertices = set()
         if point_set == "dfs":
@@ -218,6 +243,7 @@ class Model:
         self._generate_triangles()
 
     def _generate_triangles(self):
+        """Executes internal logic."""
         from scipy.spatial import ConvexHull
 
         vertices = self.vertices_4d
@@ -539,6 +565,7 @@ class Model:
             self.chain_grouping_names = ["Single"]
 
     def _compute_chain_groupings(self, centers, chains):
+        """Executes internal logic."""
         # -------------------------------------------------------------------------
         # Topological Fibration Grouping (SVD & Principal Angles)
         # -------------------------------------------------------------------------
@@ -622,6 +649,7 @@ class Model:
         self.chain_grouping_names = ["Single", "Antipodal Pairs", "Toroidal Bundles"]
 
     def _compute_vertex_colors_bfs(self):
+        """Executes internal logic."""
         color_map = {}
         if not hasattr(self, 'start_vertices') or not self.start_vertices:
             return color_map
@@ -632,18 +660,21 @@ class Model:
         return color_map
 
     def _compute_vertex_colors_distance(self):
+        """Executes internal logic."""
         color_map = {}
         for v, depth in self.distance_depths.items():
             color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
         return color_map
 
     def _compute_vertex_colors_hopf(self):
+        """Executes internal logic."""
         color_map = {}
         for v, depth in self.hopf_depths.items():
             color_map[v] = self.color_sequence[depth % len(self.color_sequence)]
         return color_map
 
     def _compute_edge_colors_bfs(self):
+        """Executes internal logic."""
         color_map = {}
         if not hasattr(self, 'start_vertices') or not self.start_vertices:
             return color_map
@@ -675,6 +706,7 @@ class Model:
         return color_map
 
     def _compute_edge_colors_icosi(self):
+        """Executes internal logic."""
         color_map = {}
         if not hasattr(self, 'start_vertices') or not self.start_vertices:
             return color_map
@@ -720,6 +752,7 @@ class Model:
         return color_map
 
     def _compute_edge_colors_hopf(self):
+        """Executes internal logic."""
         color_map = {}
         from quaternion import order10, q_mult
         q = order10
@@ -761,6 +794,7 @@ class Model:
         return color_map
 
     def _compute_edge_colors_zome(self):
+        """Executes internal logic."""
         color_map = {}
         if not hasattr(self, 'start_vertices') or not self.start_vertices:
             return color_map

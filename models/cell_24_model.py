@@ -1,3 +1,4 @@
+"""Module representing polytope geometry and rendering logic."""
 
 import numpy as np
 from itertools import permutations, combinations
@@ -29,7 +30,9 @@ def get_24_cell():
     return vertices, edges
 
 class Cell24Model(Model):
+    """Base representation class."""
     def __init__(self, blend=1.0, cell_contraction=1.0, cell_coloring="hopf"):
+        """Executes internal logic."""
         from quaternion import q_identity, hopf_24_R
         super().__init__(blend=blend, cell_contraction=cell_contraction, cell_coloring=cell_coloring, hopf_L=q_identity, hopf_R=hopf_24_R)
         self.vertices_4d, self.edges = get_24_cell()
@@ -39,6 +42,7 @@ class Cell24Model(Model):
         self._generate_triangles()
 
     def _setup_coloring(self):
+        """Executes internal logic."""
         v_inner_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == -1}
         v_middle_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 0}
         v_outer_indices = {i for i, v in enumerate(self.vertices_4d) if v[3] == 1}

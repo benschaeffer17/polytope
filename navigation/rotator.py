@@ -1,8 +1,11 @@
+"""Module representing core functionality."""
 
 import numpy as np
 
 class Rotator:
+    """Base representation class."""
     def __init__(self):
+        """Executes internal logic."""
         self.modes = [
             [(0, 1, 1.0)],                      # 1: xy
             [(0, 3, 1.0)],                      # 2: xw
@@ -14,6 +17,7 @@ class Rotator:
         self.mode_names = ["xy", "xw", "xy+zw", "xy-zw", "xy+2zw", "xy-2zw"]
 
     def get_rotation_matrix(self, mode_index, angle):
+        """Executes internal logic."""
         if mode_index < 0 or mode_index >= len(self.modes):
             raise ValueError("Invalid mode index")
 
@@ -32,6 +36,7 @@ class Rotator:
         return R
 
     def get_plane_name(self, mode_index):
+        """Executes internal logic."""
         if mode_index < 0 or mode_index >= len(self.modes):
             raise ValueError("Invalid mode index")
         return self.mode_names[mode_index]

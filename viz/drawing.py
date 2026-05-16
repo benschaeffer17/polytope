@@ -1,3 +1,4 @@
+"""Module representing core functionality."""
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -8,6 +9,7 @@ from .style import PointStyle, LineStyle
 quad = gluNewQuadric()
 
 def draw_cylinder(p1, p2, radius, slices=16):
+    """Executes internal logic."""
     v = p2 - p1
     mag = np.linalg.norm(v)
     if mag < 1e-9: # A very small constant
@@ -40,19 +42,11 @@ def draw_cylinder(p1, p2, radius, slices=16):
 
 
 
-def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_indices=None, edge_colors=None, edge_width_multipliers=None):
-    if fixed_vertices_indices is None:
-        fixed_vertices_indices = set()
-
-    if style.point_style.style == PointStyle.SPHERE or style.line_style.style == LineStyle.CYLINDER:
-        glEnable(GL_LIGHTING)
-    else:
-        glDisable(GL_LIGHTING)
-
-    # Draw points
+def _draw_points(vertices, colors, style, volume_dimension, fixed_vertices_indices):
+    """Executes internal logic."""
     if style.point_style.style == PointStyle.POINT:
         glEnable(GL_POINT_SMOOTH)
-
+        
         # Non-fixed points
         glPointSize(style.point_style.size)
         glBegin(GL_POINTS)
@@ -61,6 +55,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
                 glColor4fv(colors[i])
                 glVertex3fv(vertex)
         glEnd()
+        
         # Fixed points
         glPointSize(style.point_style.size * 3)
         glBegin(GL_POINTS)
@@ -68,66 +63,85 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
             glColor4fv(colors[i])
             glVertex3fv(vertices[i])
         glEnd()
-
+        
         glDisable(GL_POINT_SMOOTH)
-
+        
     elif style.point_style.style == PointStyle.SPHERE:
         default_radius = style.point_style.relative_size * volume_dimension / 20.0
         for i, vertex in enumerate(vertices):
             glPushMatrix()
             glTranslatef(vertex[0], vertex[1], vertex[2])
-
+            
             if i in fixed_vertices_indices:
                 radius = default_radius * 3
                 color = colors[i]
             else:
                 radius = default_radius
                 color = colors[i]
-
+                
             glColor4fv(color)
             gluSphere(quad, radius, 16, 16)
             glPopMatrix()
 
-    # Draw lines
-    if style.line_style.style == LineStyle.LINE:
-        for i, edge in enumerate(edges):
-            p1_index, p2_index = edge
-            width = style.line_style.width
-            if edge_width_multipliers is not None:
-                width *= edge_width_multipliers[i]
-            glLineWidth(width)
+def _draw_lines(vertices, edges, colors, style, edge_colors, edge_width_multipliers):
+    """Executes internal logic."""
+    for i, edge in enumerate(edges):
+        p1_index, p2_index = edge
+        width = style.line_style.width
+        if edge_width_multipliers is not None:
+            width *= edge_width_multipliers[i]
+        glLineWidth(width)
 
-            if edge_colors is not None:
-                color = edge_colors[i]
-                glBegin(GL_LINES)
-                glColor4fv(color)
-                glVertex3fv(vertices[p1_index])
-                glVertex3fv(vertices[p2_index])
-                glEnd()
-            else:
-                glBegin(GL_LINES)
-                glColor4fv(colors[p1_index])
-                glVertex3fv(vertices[p1_index])
-                glColor4fv(colors[p2_index])
-                glVertex3fv(vertices[p2_index])
-                glEnd()
-    elif style.line_style.style == LineStyle.CYLINDER:
-        base_radius = style.line_style.relative_width * volume_dimension / 20.0
-        for i, edge in enumerate(edges):
-            p1 = vertices[edge[0]]
-            p2 = vertices[edge[1]]
-
-            radius = base_radius
-            if edge_width_multipliers is not None:
-                radius *= edge_width_multipliers[i]
-
-            if edge_colors is not None:
-                color = edge_colors[i]
-            else:
-                color = colors[edge[0]]
-
+        if edge_colors is not None:
+            color = edge_colors[i]
+            glBegin(GL_LINES)
             glColor4fv(color)
-            draw_cylinder(p1, p2, radius)
+            glVertex3fv(vertices[p1_index])
+            glVertex3fv(vertices[p2_index])
+            glEnd()
+        else:
+            glBegin(GL_LINES)
+            glColor4fv(colors[p1_index])
+            glVertex3fv(vertices[p1_index])
+            glColor4fv(colors[p2_index])
+            glVertex3fv(vertices[p2_index])
+            glEnd()
+
+def _draw_cylinders(vertices, edges, colors, style, volume_dimension, edge_colors, edge_width_multipliers):
+    """Executes internal logic."""
+    base_radius = style.line_style.relative_width * volume_dimension / 20.0
+    for i, edge in enumerate(edges):
+        p1 = vertices[edge[0]]
+        p2 = vertices[edge[1]]
+
+        radius = base_radius
+        if edge_width_multipliers is not None:
+            radius *= edge_width_multipliers[i]
+
+        if edge_colors is not None:
+            color = edge_colors[i]
+        else:
+            color = colors[edge[0]]
+
+        glColor4fv(color)
+        draw_cylinder(p1, p2, radius)
+
+def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_indices=None, edge_colors=None, edge_width_multipliers=None):
+    """Executes internal logic."""
+    if fixed_vertices_indices is None:
+        fixed_vertices_indices = set()
+
+    if style.point_style.style == PointStyle.SPHERE or style.line_style.style == LineStyle.CYLINDER:
+        glEnable(GL_LIGHTING)
+    else:
+        glDisable(GL_LIGHTING)
+
+    _draw_points(vertices, colors, style, volume_dimension, fixed_vertices_indices)
+
+    if style.line_style.style == LineStyle.LINE:
+        _draw_lines(vertices, edges, colors, style, edge_colors, edge_width_multipliers)
+    elif style.line_style.style == LineStyle.CYLINDER:
+        _draw_cylinders(vertices, edges, colors, style, volume_dimension, edge_colors, edge_width_multipliers)
 
 def draw_triangles(vertices, triangles, colors, normals=None):
     """

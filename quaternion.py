@@ -1,3 +1,4 @@
+"""Module representing core functionality."""
 
 import numpy as np
 

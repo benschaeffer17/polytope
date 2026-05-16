@@ -1,10 +1,13 @@
+"""Module representing core functionality."""
 
 import numpy as np
 from OpenGL.GL import *
 import glfw
 
 class Navigator:
+    """Base representation class."""
     def __init__(self, ui):
+        """Executes internal logic."""
         self.ui = ui
         self.rotation = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32) # w, x, y, z
         self.last_mouse_pos = None
@@ -14,6 +17,7 @@ class Navigator:
         self.ui.register_cursor_pos_callback(self.cursor_pos_callback)
 
     def mouse_button_callback(self, window, button, action, mods):
+        """Executes internal logic."""
         if button == glfw.MOUSE_BUTTON_LEFT:
             if action == glfw.PRESS:
                 self.mouse_pressed = True
@@ -23,10 +27,12 @@ class Navigator:
                 self.last_mouse_pos = None
 
     def cursor_pos_callback(self, window, xpos, ypos):
+        """Executes internal logic."""
         if self.mouse_pressed and self.last_mouse_pos:
             width, height = glfw.get_window_size(window)
 
             def to_hemisphere(x, y):
+                """Executes internal logic."""
                 x_norm = (2.0 * x / width) - 1.0
                 y_norm = 1.0 - (2.0 * y / height)
 
@@ -61,11 +67,13 @@ class Navigator:
             self.last_mouse_pos = (xpos, ypos)
 
     def normalize_quaternion(self):
+        """Executes internal logic."""
         norm = np.linalg.norm(self.rotation)
         if norm > 0:
             self.rotation /= norm
 
     def get_rotation_matrix(self):
+        """Executes internal logic."""
         w, x, y, z = self.rotation
 
         # 4D rotation matrix (projection from 4D to 3D)
@@ -84,6 +92,7 @@ class Navigator:
         ], dtype=np.float32)
 
     def apply_rotation(self):
+        """Executes internal logic."""
         glMultMatrixf(self.get_rotation_matrix())
 
 if __name__ == '__main__':
@@ -92,12 +101,15 @@ if __name__ == '__main__':
     from widgets.ui import UserInterface
 
     class App:
+        """Base representation class."""
         def __init__(self):
+            """Executes internal logic."""
             self.ui = UserInterface()
             self.nav = Navigator(self.ui)
             self.ui.register_draw_function(self.draw)
 
         def draw(self):
+            """Executes internal logic."""
             glPushMatrix()
             self.nav.apply_rotation()
 
@@ -145,6 +157,7 @@ if __name__ == '__main__':
             glPopMatrix()
 
         def run(self):
+            """Executes internal logic."""
             self.ui.run()
 
     # Running this directly requires running from the viz directory
