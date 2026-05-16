@@ -39,7 +39,7 @@ def get_600_cell_vertices():
                 temp_p = list(p)
                 if temp_p[i] > temp_p[j]:
                     inversions += 1
-        
+
         if inversions % 2 == 0:
             for i in range(8): # signs for non-zero elements
                 v = list(p)
@@ -50,7 +50,7 @@ def get_600_cell_vertices():
                             v[j] *= -1
                         k += 1
                 vertices.add(tuple(v))
-                
+
     return np.array(list(vertices), dtype=np.float32)
 
 def get_600_cell_cells(vertices=None):
@@ -70,7 +70,7 @@ def project_4d_to_3d(vertices, rotation_matrix=None, d=2.0):
         rotation_matrix = np.identity(4)
 
     rotated_vertices = vertices @ rotation_matrix.T
-    
+
     projected_vertices = []
     for v in rotated_vertices:
         w = v[3]
@@ -82,5 +82,5 @@ def project_4d_to_3d(vertices, rotation_matrix=None, d=2.0):
             projected_vertices.append( (d * v[0:3]) / (d - w) )
         else:
             projected_vertices.append(v[0:3] * 1e9) # Avoid division by zero
-            
+
     return np.array(projected_vertices, dtype=np.float32)

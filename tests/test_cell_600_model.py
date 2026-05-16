@@ -59,11 +59,11 @@ class Test600Cell(unittest.TestCase):
         rotating through the color sequence.
         """
         model = Cell600Model(edge_coloring="hopf")
-        
+
         from models.color_constants import COLOR_VALUES, COLOR_SEQUENCE
-        
+
         color_counts = {name: 0 for name in COLOR_VALUES.keys()}
-        
+
         for edge_color in model.edge_colors:
             # Find the exact match in the COLOR_VALUES
             for name, rgb in COLOR_VALUES.items():
@@ -80,8 +80,8 @@ class Test600Cell(unittest.TestCase):
 
         for name in COLOR_VALUES.keys():
             self.assertEqual(
-                color_counts[name], 
-                expected_counts[name], 
+                color_counts[name],
+                expected_counts[name],
                 f"{name} count is {color_counts[name]}, expected {expected_counts[name]}"
             )
 
@@ -101,7 +101,7 @@ class Test600Cell(unittest.TestCase):
         for v1, v2 in model.edges:
             adj[v1].append(v2)
             adj[v2].append(v1)
-        
+
         for i in range(len(model.vertices_4d)):
             self.assertEqual(len(adj[i]), 12)
 

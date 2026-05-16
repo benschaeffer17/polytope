@@ -26,7 +26,7 @@ class Test120Cell(unittest.TestCase):
         for v1, v2 in model.edges:
             adj[v1].append(v2)
             adj[v2].append(v1)
-        
+
         for i in range(len(model.vertices_4d)):
             self.assertEqual(len(adj[i]), 4)
 
@@ -43,11 +43,11 @@ class Test120Cell(unittest.TestCase):
             counts.append(c)
             if c == 600:
                 break
-            
+
         print("120-cell cumulative points mode counts:", counts)
         self.assertTrue(counts[0] > 0)
         self.assertEqual(counts[-1], 600)
-        
+
         # Verify monotonically increasing
         for i in range(1, len(counts)):
             self.assertTrue(counts[i] >= counts[i-1])
@@ -59,7 +59,7 @@ class Test120Cell(unittest.TestCase):
         vertices, edges = get_120_cell()
         v1, v2 = edges[0]
         dist_sq = np.sum((vertices[v1] - vertices[v2])**2)
-        
+
         phi = (1 + np.sqrt(5)) / 2
         # The prompt states: edge length should be sqrt(2) / (4*phi^2)
         # But depending on normalization, we might just assert that all edges have the same length.
@@ -67,7 +67,7 @@ class Test120Cell(unittest.TestCase):
         for i, j in edges:
             d_sq = np.sum((vertices[i] - vertices[j])**2)
             self.assertAlmostEqual(d_sq, dist_sq, places=5)
-            
+
     def test_triangles_count(self):
         """
         Tests that the 120-cell is triangulated correctly into 7200 triangles.

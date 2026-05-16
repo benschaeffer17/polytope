@@ -35,7 +35,7 @@ class App:
         self.rotator = Rotator()
         self.capture = Capture(self.ui.window)
         self.ui.register_draw_function(self.draw)
-        
+
         self.shape_name = '600-cell'
         self.model = None
 
@@ -65,7 +65,7 @@ class App:
         self.draw_triangles = False
         self.cell_chain = 0
         self.load_shape()
-        
+
         self.angle_4d = 0.0
         self.rotation_plane = 0 # Default to xy plane
         self.rotation_speed_level = 3
@@ -191,7 +191,7 @@ class App:
                                       cell_contraction=contraction)
         if current_style:
             self.model.style = current_style
-            
+
         # Ensure the active cell chain selection is still valid for the newly generated geometry
         if self.model and self.cell_chain > self.model.num_chains:
             self.cell_chain = 0
@@ -222,7 +222,7 @@ class App:
         self.last_frame_time = current_time
 
         width, height = glfw.get_window_size(self.ui.window)
-        
+
         if self.show_help:
             help_lines = [
                 "POLYTOPE VISUALIZER KEYBOARD CONTROLS",
@@ -254,13 +254,13 @@ class App:
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         aspect_ratio = width / (height if height > 0 else 1)
-        
+
         d = self.camera_distance
         if width >= height:
             glOrtho(-d * aspect_ratio, d * aspect_ratio, -d, d, -10, 10)
         else:
             glOrtho(-d, d, -d / aspect_ratio, d / aspect_ratio, -10, 10)
-        
+
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -279,11 +279,11 @@ class App:
 
         projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
-        
+
         # Draw the cell triangles if activated
         if self.draw_triangles and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
             projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
-            
+
             if self.cell_chain == 0:
                 drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
             elif hasattr(self.model, 'chain_groupings'):
@@ -307,14 +307,14 @@ class App:
         render_mode = "Wireframe" if self.model.style.line_style.style == LineStyle.LINE else "Cylinders"
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
-        
+
         if hasattr(self.model, 'chain_groupings'):
             group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
             num_groups = len(self.model.chain_groupings[group_name])
             chain_status = f"{self.cell_chain}/{num_groups} ({group_name})" if self.cell_chain > 0 else f"ALL ({group_name})"
         else:
             chain_status = f"{self.cell_chain}/{self.model.num_chains}" if self.cell_chain > 0 else "ALL"
-        
+
         hud_lines = [
             f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
             f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}",

@@ -25,14 +25,14 @@ class HeadsUpDisplay:
         glLoadIdentity()
 
         glColor3f(1.0, 1.0, 1.0)
-        
+
         if isinstance(nav_state, str):
             lines = nav_state.split('\n')
         else:
             lines = nav_state
 
         font = getattr(self, 'font', GLUT_STROKE_MONO_ROMAN)
-        
+
         dynamic_scale = min(width / 800.0, height / 600.0)
 
         if font in [GLUT_STROKE_ROMAN, GLUT_STROKE_MONO_ROMAN]:
@@ -77,7 +77,7 @@ class UserInterface:
         if headless:
             glfw.window_hint(glfw.VISIBLE, glfw.FALSE)
             # Use software rendering or a hidden context if needed, but VISIBLE=FALSE is usually enough
-            
+
         self.window = glfw.create_window(width, height, title, None, None)
 
         if not self.window:
@@ -110,7 +110,7 @@ class UserInterface:
 
     def register_mouse_button_callback(self, button, func):
         self.mouse_button_callbacks[button] = func
-    
+
     def register_cursor_pos_callback(self, func):
         self.cursor_pos_callback = func
 
@@ -138,7 +138,7 @@ class UserInterface:
     def run(self, app=None):
         while not glfw.window_should_close(self.window):
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            
+
             if self.draw_func:
                 if app and app.capture.recording:
                     self.draw_func()

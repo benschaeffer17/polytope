@@ -19,13 +19,13 @@ def get_24_cell():
                         v[j] *= -1
                     k += 1
             vertices.add(tuple(v))
-    
+
     vertices = np.array(list(vertices), dtype=np.float32)
 
     from scipy.spatial import cKDTree
     tree = cKDTree(vertices)
     edges = list(tree.query_pairs(1.45))
-            
+
     return vertices, edges
 
 class Cell24Model(Model):
@@ -57,7 +57,7 @@ class Cell24Model(Model):
         self.colors = np.array(self.colors, dtype=np.float32)
 
         self.edge_colors = []
-        
+
         green = [0.0, 1.0, 0.0, self.blend]
         red = [1.0, 0.0, 0.0, self.blend]
         blue = [0.0, 0.0, 1.0, self.blend]
@@ -84,7 +84,7 @@ class Cell24Model(Model):
                 self.edge_colors.append(purple)
             else:
                 self.edge_colors.append([1.0, 1.0, 1.0, self.blend])
-        
+
         self.edge_colors = np.array(self.edge_colors, dtype=np.float32)
         from .color_constants import get_scaling_multiplier_by_color
         self.edge_width_multipliers = np.array([get_scaling_multiplier_by_color(c) for c in self.edge_colors], dtype=np.float32)

@@ -17,19 +17,19 @@ q_identity = np.array([1.0, 0.0, 0.0, 0.0])
 # -------------------------------------------------------------------------
 # Hopf Fibration & Boerdijk-Coxeter Helix Generators
 # -------------------------------------------------------------------------
-# The visualizer uses isoclinic rotations (Clifford translations) in 4D space 
+# The visualizer uses isoclinic rotations (Clifford translations) in 4D space
 # (c -> L * c * R) to generate the discrete topological fibers of the Hopf Fibration.
 # For broader context on this topological mapping, see:
 # https://en.wikipedia.org/wiki/Hopf_fibration
-# 
-# To generate a perfectly face-adjacent chain of 30 tetrahedra (a Boerdijk-Coxeter helix) 
+#
+# To generate a perfectly face-adjacent chain of 30 tetrahedra (a Boerdijk-Coxeter helix)
 # within the 600-cell, we use a specific 4D screw motion.
 # Reference: https://en.wikipedia.org/wiki/Boerdijk%E2%80%93Coxeter_helix
-# 
+#
 # hopf_600_L is an order-10 quaternion. It provides the "long" twist around the great circle.
 hopf_600_L = np.array([(1/phi) / 2, 0.5, 0.0, -phi / 2])
 
-# hopf_600_R is an order-6 quaternion. It provides the localized "corkscrew" twisting 
+# hopf_600_R is an order-6 quaternion. It provides the localized "corkscrew" twisting
 # that forces the path to cleanly enter and exit the alternating tetrahedral faces.
 hopf_600_R = np.array([0.5, -0.5, 0.5, 0.5])
 

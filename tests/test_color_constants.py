@@ -15,13 +15,13 @@ class TestColorConstants(unittest.TestCase):
         # Test first and last color in sequence specifically
         first_color = COLOR_SEQUENCE[0]
         last_color = COLOR_SEQUENCE[-1]
-        
+
         mult_first = get_scaling_multiplier_by_color(COLOR_VALUES[first_color])
         self.assertAlmostEqual(mult_first, 0.9, places=5, msg=f"First color {first_color} should have multiplier 0.9")
-        
+
         mult_last = get_scaling_multiplier_by_color(COLOR_VALUES[last_color])
         self.assertAlmostEqual(mult_last, 1.1, places=5, msg=f"Last color {last_color} should have multiplier 1.1")
-        
+
         # Ensure it increases monotonically
         previous_mult = 0.0
         for color_name in COLOR_SEQUENCE:
@@ -36,7 +36,7 @@ class TestColorConstants(unittest.TestCase):
         # An arbitrary color not in the sequence (e.g. gray)
         gray = [0.5, 0.5, 0.5]
         self.assertAlmostEqual(get_scaling_multiplier_by_color(gray), 1.0)
-        
+
         # Test 4D vector handling (RGBA) for a color not in sequence
         transparent_gray = [0.5, 0.5, 0.5, 0.5]
         self.assertAlmostEqual(get_scaling_multiplier_by_color(transparent_gray), 1.0)

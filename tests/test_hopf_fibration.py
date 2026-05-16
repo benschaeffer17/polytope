@@ -17,7 +17,7 @@ class TestHopfFibration(unittest.TestCase):
         """
         model = Cell120Model(cell_coloring="hopf")
         model._generate_triangles()
-        
+
         self.assertEqual(len(model.cell_chains), 12, "120-cell should have exactly 12 chains.")
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 10, "Each 120-cell chain should have exactly 10 cells.")
@@ -36,10 +36,10 @@ class TestHopfFibration(unittest.TestCase):
         """
         model = Cell600Model(cell_coloring="hopf")
         model._generate_triangles()
-        
+
         self.assertEqual(len(model.cell_chains), 20, "600-cell should have exactly 20 chains.")
         connected_helices_found = 0
-        
+
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 30, "Each 600-cell chain should have exactly 30 cells.")
             # Check if this chain is a perfect equator helix (adjacent cells share faces)
@@ -57,7 +57,7 @@ class TestHopfFibration(unittest.TestCase):
         """
         model = Cell24Model(cell_coloring="hopf")
         model._generate_triangles()
-        
+
         self.assertEqual(len(model.cell_chains), 6, "24-cell should have exactly 6 chains.")
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 4, "Each 24-cell chain should have exactly 4 cells.")

@@ -24,27 +24,27 @@ def generate_goldens():
 
     for name, config in CONFIGS.items():
         print(f"Generating golden for {name}...")
-        
+
         # Apply config
         for key, value in config.items():
             setattr(app, key, value)
-            
+
         app.load_shape()
-        
+
         # Clear buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        
+
         # Disable help text for goldens
         app.show_help = False
-        
+
         # Render
         app.draw()
         glfw.swap_buffers(app.ui.window)
         glfw.poll_events()
-        
+
         # Extract pixels
         image = app.ui.get_pixels(width, height)
-        
+
         # Save golden
         image_path = os.path.join(GOLDEN_DIR, f"{name}.png")
         image.save(image_path)

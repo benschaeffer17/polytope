@@ -17,7 +17,7 @@ class TestQuaternion(unittest.TestCase):
         q_pow = np.copy(q)
         for _ in range(5):
             q_pow = q_mult(q_pow, q)
-        
+
         expected = np.array([1.0, 0.0, 0.0, 0.0])
         # Let's check the norm of q_pow to see if it is 1.
         norm_q_pow = np.linalg.norm(q_pow)
@@ -32,7 +32,7 @@ class TestQuaternion(unittest.TestCase):
         q_pow = np.copy(q)
         for _ in range(9):
             q_pow = q_mult(q_pow, q)
-        
+
         expected = np.array([1.0, 0.0, 0.0, 0.0])
         # Let's check the norm of q_pow to see if it is 1.
         norm_q_pow = np.linalg.norm(q_pow)

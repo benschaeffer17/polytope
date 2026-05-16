@@ -20,15 +20,15 @@ class Rotator:
         R = np.identity(4)
         for i, j, speed in self.modes[mode_index]:
             c, s = np.cos(angle * speed), np.sin(angle * speed)
-            
+
             R_part = np.identity(4)
             R_part[i, i] = c
             R_part[i, j] = -s
             R_part[j, i] = s
             R_part[j, j] = c
-            
+
             R = R @ R_part
-            
+
         return R
 
     def get_plane_name(self, mode_index):

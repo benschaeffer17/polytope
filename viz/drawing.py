@@ -14,27 +14,27 @@ def draw_cylinder(p1, p2, radius, slices=16):
         return
 
     v = v / mag
-    
+
     # The axis of the cylinder
     axis = np.array([0.0, 0.0, 1.0])
-    
+
     # The rotation axis is the cross product of the cylinder axis and the vector v
     rot_axis = np.cross(axis, v)
-    
+
     # The angle of rotation
     dot_product = np.dot(axis, v)
     angle = np.rad2deg(np.arccos(dot_product))
 
     glPushMatrix()
     glTranslatef(p1[0], p1[1], p1[2])
-    
+
     # If the vector is anti-parallel to the axis, the cross product is zero.
     # In this case, we need to choose an arbitrary rotation axis.
     if dot_product < -0.99999:
         glRotatef(180, 1.0, 0.0, 0.0) # Rotate 180 degrees around x-axis
     elif np.linalg.norm(rot_axis) > 1e-6:
         glRotatef(angle, rot_axis[0], rot_axis[1], rot_axis[2])
-    
+
     gluCylinder(quad, radius, radius, mag, slices, 1)
     glPopMatrix()
 
@@ -52,7 +52,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
     # Draw points
     if style.point_style.style == PointStyle.POINT:
         glEnable(GL_POINT_SMOOTH)
-        
+
         # Non-fixed points
         glPointSize(style.point_style.size)
         glBegin(GL_POINTS)
@@ -68,7 +68,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
             glColor4fv(colors[i])
             glVertex3fv(vertices[i])
         glEnd()
-        
+
         glDisable(GL_POINT_SMOOTH)
 
     elif style.point_style.style == PointStyle.SPHERE:
@@ -116,7 +116,7 @@ def draw(vertices, edges, colors, style, volume_dimension=4.0, fixed_vertices_in
         for i, edge in enumerate(edges):
             p1 = vertices[edge[0]]
             p2 = vertices[edge[1]]
-            
+
             radius = base_radius
             if edge_width_multipliers is not None:
                 radius *= edge_width_multipliers[i]
@@ -168,7 +168,7 @@ def draw_triangles(vertices, triangles, colors, normals=None):
     tri_normals_flat = np.ascontiguousarray(tri_normals.reshape(-1, 3))
 
     glEnable(GL_LIGHTING)
-    
+
     # Enable Client States
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
