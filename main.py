@@ -25,8 +25,9 @@ class App:
     MIN_ZOOM_FACTOR = 0.3
     MAX_ZOOM_FACTOR = 10.0
 
-    def __init__(self):
-        self.ui = UserInterface(title="Polytope Visualizer")
+    def __init__(self, headless=False):
+        self.headless = headless
+        self.ui = UserInterface(title="Polytope Visualizer", headless=headless)
         self.nav = Navigator(self.ui)
         self.hud = HeadsUpDisplay(self.ui.window)
         self.hud.font = GLUT_STROKE_MONO_ROMAN
@@ -321,7 +322,7 @@ class App:
         ]
         self.hud.draw(hud_lines)
 
-    def run(self):
+    def setup_gl(self):
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
@@ -332,6 +333,9 @@ class App:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+
+    def run(self):
+        self.setup_gl()
         self.ui.run(self)
 
 if __name__ == '__main__':

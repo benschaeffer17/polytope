@@ -70,10 +70,14 @@ class HeadsUpDisplay:
 
 
 class UserInterface:
-    def __init__(self, title="Polytope Visualizer", width=800, height=600):
+    def __init__(self, title="Polytope Visualizer", width=800, height=600, headless=False):
         if not glfw.init():
             raise Exception("GLFW can't be initialized")
 
+        if headless:
+            glfw.window_hint(glfw.VISIBLE, glfw.FALSE)
+            # Use software rendering or a hidden context if needed, but VISIBLE=FALSE is usually enough
+            
         self.window = glfw.create_window(width, height, title, None, None)
 
         if not self.window:
@@ -152,6 +156,15 @@ class UserInterface:
             glfw.poll_events()
 
         glfw.terminate()
+
+    def get_pixels(self, width, height):
+        """Reads pixels from the current OpenGL buffer and returns a PIL Image."""
+        from PIL import Image
+        glReadBuffer(GL_BACK)
+        pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
+        image = Image.frombytes("RGB", (width, height), pixels)
+        # OpenGL's origin is bottom-left, PIL's is top-left, so flip vertically
+        return image.transpose(Image.FLIP_TOP_BOTTOM)
 
 if __name__ == '__main__':
     def draw():
