@@ -6,7 +6,7 @@ This document outlines the class hierarchy of the polytope visualization project
 
 *   `main.App`: The main application class that orchestrates the entire visualization. It initializes and manages the UI, navigation, and the currently displayed polytope model.
 
-*   `widgets.ui.UserInterface`: This class manages the application window, OpenGL context, and user input. It provides a run loop and allows registering callbacks for drawing and input events.
+*   `widgets.ui.UserInterface`: This class manages the application window, OpenGL context, and user input. It provides a run loop, allows registering callbacks for drawing and input events, and features an `any_key_callback` mechanism to intercept and consume events (e.g., for the interactive Help Screen overlay).
 
 *   `navigation.navigator.Navigator`: This class handles 3D camera rotation based on mouse input.
 
@@ -14,9 +14,9 @@ This document outlines the class hierarchy of the polytope visualization project
 
 ## Model Classes
 
-These classes represent the polytopes themselves. They encapsulate the geometry (vertices, edges) and coloring information.
+These classes represent the polytopes themselves. They encapsulate the geometry (vertices, edges), topological analysis, and coloring information.
 
-*   `models.model.Model`: The abstract base class for all polytope models. It defines the common interface for a model, including attributes for vertices, edges, colors, and style.
+*   `models.model.Model`: The abstract base class for all polytope models. It defines the common interface for a model, handles 3D cell extraction and triangulation, and houses the `_compute_chain_groupings` logic which uses Singular Value Decomposition to calculate discrete Hopf topological modes.
 
 *   `models.cell_24_model.Cell24Model`: A concrete implementation of `Model` for the 24-cell polytope. It loads the geometry from `get_24_cell` and defines the specific coloring and style for this shape.
 

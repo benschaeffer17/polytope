@@ -347,6 +347,22 @@ class Model:
             self.chain_grouping_names = ["Single"]
 
     def _compute_chain_groupings(self, centers, chains):
+        # -------------------------------------------------------------------------
+        # Topological Fibration Grouping (SVD & Principal Angles)
+        # -------------------------------------------------------------------------
+        # The discrete fibers of the 24-cell, 120-cell, and 600-cell fibrations perfectly 
+        # map onto the vertices of Platonic solids (Octahedron, Icosahedron, Dodecahedron) 
+        # on the S^2 base space of the Hopf map.
+        # 
+        # We can computationally extract these structures by finding the exact 2D invariant 
+        # plane of each fiber using Singular Value Decomposition (SVD):
+        # https://en.wikipedia.org/wiki/Singular_value_decomposition
+        # 
+        # By calculating the principal angles between these 2D planes, we mathematically 
+        # discover the concentric, interlocked "Clifford tori" (Toroidal Bundles) and 
+        # orthogonal polar opposites (Antipodal Pairs).
+        # https://en.wikipedia.org/wiki/Clifford_torus
+        
         # 1. Compute the 2D plane spanning each chain using SVD
         chain_planes = []
         for chain in chains:

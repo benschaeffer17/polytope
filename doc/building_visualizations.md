@@ -80,8 +80,21 @@ from polytopes import project_4d_to_3d
         # Get projected 3D vertices
         projected_vertices = project_4d_to_3d(self.model.vertices_4d, self.angle_4d)
         
-        # Draw the polytope
+        # Draw the polytope wireframe/vertices
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style)
+        
+        # Draw the 3D cell faces, utilizing topological grouping if available
+        if self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
+            projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, self.angle_4d)
+            if hasattr(self.model, 'chain_groupings'):
+                # Extract the indices of the active topological group
+                group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
+                active_group = self.model.chain_groupings[group_name][self.cell_chain - 1]
+                for chain_idx in active_group:
+                    tris_to_draw, _, colors_to_draw = self.model.triangles_by_chain[chain_idx]
+                    drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
+            else:
+                drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
 ```
 
 ### 4. Implement the `run` method
@@ -127,3 +140,11 @@ def toggle_style(self, *args):
     self.model.style.toggle_style()
 ```
 Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders. You can also use widgets to add functionality. For example, the `Capture` widget saves a screenshot when a key is pressed.
+
+## Interactive Help Menu & Groupings
+
+The visualizer supports a built-in help overlay that can intercept and consume keystrokes. Pressing **`/`** will display an on-screen list of all registered keyboard commands.
+
+If topological `chain_groupings` have been calculated by the `Model` (using SVD extraction of the discrete Hopf fibration), you can use the following keys to explore them:
+- **`H`**: Cycle the `chain_grouping_mode` (e.g., Single, Antipodal Pairs, Toroidal Bundles).
+- **`N`**: Cycle through the active groups of the current topological mode.
