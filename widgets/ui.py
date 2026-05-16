@@ -130,6 +130,10 @@ class UserInterface:
 
     def _key_callback(self, window, key, scancode, action, mods):
         """Executes internal logic."""
+        if hasattr(self, 'window_key_proxy') and self.window_key_proxy:
+            self.window_key_proxy(window, key, scancode, action, mods)
+            return
+
         if action == glfw.PRESS or action == glfw.REPEAT:
             if self.any_key_callback and self.any_key_callback(key):
                 return

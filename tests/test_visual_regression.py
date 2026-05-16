@@ -33,7 +33,15 @@ def test_visual_regression(app_instance, config_name, config):
 
     # Apply configuration
     for key, value in config.items():
-        setattr(app_instance, key, value)
+        var_name = key.replace('_index', '')
+        if var_name == 'd': var_name = 'd_value'
+        
+        if key.endswith('_index') and app_instance.state.get_variable(var_name):
+            app_instance.state.get_variable(var_name).current_index = value
+        elif key == 'draw_triangles':
+            app_instance.state.get_variable('draw_triangles').current_index = 1 if value else 0
+        else:
+            setattr(app_instance, key, value)
 
     app_instance.load_shape()
     app_instance.show_help = False

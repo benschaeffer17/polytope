@@ -10,6 +10,7 @@ from PIL import Image
 
 from widgets.ui import UserInterface, HeadsUpDisplay
 from widgets.capture import Capture
+from widgets.state import UIStateManager, UIStateVariable, UIAction
 from navigation.navigator import Navigator
 from navigation.rotator import Rotator
 from polytopes import project_4d_to_3d
@@ -42,31 +43,23 @@ class App:
         self.shape_name = '600-cell'
         self.model = None
 
-        self.vertex_modes = ['partition', 'bfs', 'distance', 'hopf']
-        self.vertex_mode_index = 0
-
-        self.edge_modes = ['bfs', 'icosi', 'hopf', 'zome']
-        self.edge_mode_index = 0
-
-        self.points_modes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        self.points_mode_index = 5
-
-        self.slice_modes = ['at_least', 'exact', 'adjacent', 'echo']
-        self.slice_mode_index = 0
-
-        self.point_sets = ['dfs', 'distance', 'hopf']
-        self.point_set_index = 0
-
-        self.blend_values = [i / 10.0 for i in range(1, 11)]
-        self.blend_index = 9
-
-        self.d_values = [1.0, 1.2, 1.5, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]
-        self.d_index = 3
-
-        self.cell_contraction_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        self.cell_contraction_index = 9
-        self.draw_triangles = False
+        self.state = UIStateManager()
+        
+        # Discrete configuration variables
+        self.state.register(UIStateVariable("vertex_mode", ['partition', 'bfs', 'distance', 'hopf'], glfw.KEY_8, "8", "Toggle vertex coloring mode", on_change=self.load_shape))
+        self.state.register(UIStateVariable("edge_mode", ['bfs', 'icosi', 'hopf', 'zome'], glfw.KEY_9, "9", "Toggle edge coloring mode", on_change=self.load_shape))
+        self.state.register(UIStateVariable("points_mode", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], glfw.KEY_0, "0", "Toggle points mode (filtering geometry)", default_index=5, on_change=self.load_shape))
+        self.state.register(UIStateVariable("slice_mode", ['at_least', 'exact', 'adjacent', 'echo'], glfw.KEY_S, "S", "Toggle slice mode (cutting planes)", on_change=self.load_shape))
+        self.state.register(UIStateVariable("point_set", ['dfs', 'distance', 'hopf'], glfw.KEY_F, "F", "Toggle point set (DFS generation)", on_change=self.load_shape))
+        self.state.register(UIStateVariable("blend", [i / 10.0 for i in range(1, 11)], glfw.KEY_Q, "Q", "Toggle face opacity (blend)", default_index=9, on_change=self.load_shape))
+        self.state.register(UIStateVariable("d_value", [1.0, 1.2, 1.5, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0], glfw.KEY_D, "D", "Toggle 4D perspective depth (d-value)", default_index=3))
+        self.state.register(UIStateVariable("cell_contraction", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], glfw.KEY_G, "G", "Toggle 3D cell contraction (spacing out cells)", default_index=9, on_change=self.load_shape))
+        self.state.register(UIStateVariable("draw_triangles", [False, True], glfw.KEY_B, "B", "Toggle drawing of 2D face triangles"))
+        
         self.cell_chain = 0
+        self.chain_grouping_mode = 0
+
+        # Load initial shape based on default states
         self.load_shape()
 
         self.angle_4d = 0.0
@@ -74,40 +67,41 @@ class App:
         self.rotation_speed_level = 3
         self.base_rotation_speed = 0.001
         self.last_frame_time = 0.0
-
-
         self.default_camera_distance = 2.0
         self.camera_distance = self.default_camera_distance
-
-        self.ui.register_keyboard_callback(glfw.KEY_V, lambda *args: self.model.style.toggle_style())
-        self.ui.register_keyboard_callback(glfw.KEY_T, self.toggle_shape)
-        self.ui.register_keyboard_callback(glfw.KEY_P, self.capture.toggle_recording)
-        self.ui.register_keyboard_callback(glfw.KEY_1, lambda *args: self.set_rotation_plane(0))
-        self.ui.register_keyboard_callback(glfw.KEY_2, lambda *args: self.set_rotation_plane(1))
-        self.ui.register_keyboard_callback(glfw.KEY_3, lambda *args: self.set_rotation_plane(2))
-        self.ui.register_keyboard_callback(glfw.KEY_4, lambda *args: self.set_rotation_plane(3))
-        self.ui.register_keyboard_callback(glfw.KEY_5, lambda *args: self.set_rotation_plane(4))
-        self.ui.register_keyboard_callback(glfw.KEY_6, lambda *args: self.set_rotation_plane(5))
-        self.ui.register_keyboard_callback(glfw.KEY_A, self.increase_rotation_speed)
-        self.ui.register_keyboard_callback(glfw.KEY_D, self.toggle_d_value)
-
-        self.ui.register_keyboard_callback(glfw.KEY_Z, self.decrease_rotation_speed)
-        self.ui.register_keyboard_callback(glfw.KEY_K, self.zoom_out)
-        self.ui.register_keyboard_callback(glfw.KEY_M, self.zoom_in)
-        self.ui.register_keyboard_callback(glfw.KEY_8, self.toggle_vertex_mode)
-        self.ui.register_keyboard_callback(glfw.KEY_9, self.toggle_edge_mode)
-        self.ui.register_keyboard_callback(glfw.KEY_0, self.toggle_points_mode)
-        self.ui.register_keyboard_callback(glfw.KEY_S, self.toggle_slice_mode)
-        self.ui.register_keyboard_callback(glfw.KEY_F, self.toggle_point_set)
-        self.ui.register_keyboard_callback(glfw.KEY_Q, self.toggle_blend)
-        self.ui.register_keyboard_callback(glfw.KEY_B, self.toggle_draw_triangles)
-        self.ui.register_keyboard_callback(glfw.KEY_G, self.toggle_cell_contraction)
-        self.ui.register_keyboard_callback(glfw.KEY_N, self.toggle_cell_chain)
-        self.ui.register_keyboard_callback(glfw.KEY_H, self.toggle_chain_grouping)
-        self.ui.register_keyboard_callback(glfw.KEY_SLASH, self.toggle_help)
-        self.ui.register_any_key_callback(self.any_key_handler)
-
+        
         self.show_help = False
+
+        # Continuous / Stateless Actions
+        self.state.register(UIAction(glfw.KEY_V, "V", "Toggle render style (Wireframe/Cylinder)", lambda: self.model.style.toggle_style() if self.model else None))
+        self.state.register(UIAction(glfw.KEY_T, "T", "Toggle shape (24-cell, 120-cell, 600-cell)", self.toggle_shape))
+        self.state.register(UIAction(glfw.KEY_P, "P", "Toggle recording to WebP video", self.capture.toggle_recording))
+        self.state.register(UIAction(glfw.KEY_1, "1", "Set 4D rotation plane to XY", lambda: self.set_rotation_plane(0)))
+        self.state.register(UIAction(glfw.KEY_2, "2", "Set 4D rotation plane to XZ", lambda: self.set_rotation_plane(1)))
+        self.state.register(UIAction(glfw.KEY_3, "3", "Set 4D rotation plane to XW", lambda: self.set_rotation_plane(2)))
+        self.state.register(UIAction(glfw.KEY_4, "4", "Set 4D rotation plane to YZ", lambda: self.set_rotation_plane(3)))
+        self.state.register(UIAction(glfw.KEY_5, "5", "Set 4D rotation plane to YW", lambda: self.set_rotation_plane(4)))
+        self.state.register(UIAction(glfw.KEY_6, "6", "Set 4D rotation plane to ZW", lambda: self.set_rotation_plane(5)))
+        self.state.register(UIAction(glfw.KEY_A, "A", "Increase rotation speed", self.increase_rotation_speed))
+        self.state.register(UIAction(glfw.KEY_Z, "Z", "Decrease rotation speed", self.decrease_rotation_speed))
+        self.state.register(UIAction(glfw.KEY_K, "K", "Zoom out", self.zoom_out))
+        self.state.register(UIAction(glfw.KEY_M, "M", "Zoom in", self.zoom_in))
+        self.state.register(UIAction(glfw.KEY_N, "N", "Cycle through isolated Boerdijk-Coxeter cell chains", self.toggle_cell_chain))
+        self.state.register(UIAction(glfw.KEY_H, "H", "Toggle chain grouping", self.toggle_chain_grouping))
+        self.state.register(UIAction(glfw.KEY_SLASH, "/", "Toggle this Help Screen", self.toggle_help))
+        self.state.register(UIAction(glfw.KEY_ESCAPE, "ESC", "Quit", self.ui.close_window))
+
+        # Proxy the UI manager to the GLFW keyboard callback
+        def proxy_keyboard_callback(window, key, scancode, action, mods):
+            if action == glfw.PRESS or action == glfw.REPEAT:
+                self.state.handle_keypress(key)
+        self.ui.register_any_key_callback(self.any_key_handler)
+        # Override the existing keyboard callback
+        self.ui.window_key_proxy = proxy_keyboard_callback
+        glfw.set_key_callback(self.ui.window, self.ui._key_callback)
+        # Hack to intercept it via ui
+        self.ui.keyboard_callbacks.clear()
+        self.ui.any_key_callback = lambda k: self.any_key_handler(k) or self.state.handle_keypress(k)
         self.chain_grouping_mode = 0
 
     def toggle_help(self, *args):
@@ -133,48 +127,7 @@ class App:
         max_dist = self.default_camera_distance * self.MAX_ZOOM_FACTOR
         self.camera_distance = min(new_dist, max_dist)
 
-    def toggle_d_value(self, *args):
-        """Executes internal logic."""
-        self.d_index = (self.d_index + 1) % len(self.d_values)
 
-    def toggle_vertex_mode(self, *args):
-        """Executes internal logic."""
-        self.vertex_mode_index = (self.vertex_mode_index + 1) % len(self.vertex_modes)
-        self.load_shape()
-
-    def toggle_edge_mode(self, *args):
-        """Executes internal logic."""
-        self.edge_mode_index = (self.edge_mode_index + 1) % len(self.edge_modes)
-        self.load_shape()
-
-    def toggle_points_mode(self, *args):
-        """Executes internal logic."""
-        self.points_mode_index = (self.points_mode_index + 1) % len(self.points_modes)
-        self.load_shape()
-
-    def toggle_slice_mode(self, *args):
-        """Executes internal logic."""
-        self.slice_mode_index = (self.slice_mode_index + 1) % len(self.slice_modes)
-        self.load_shape()
-
-    def toggle_point_set(self, *args):
-        """Executes internal logic."""
-        self.point_set_index = (self.point_set_index + 1) % len(self.point_sets)
-        self.load_shape()
-
-    def toggle_blend(self, *args):
-        """Executes internal logic."""
-        self.blend_index = (self.blend_index + 1) % len(self.blend_values)
-        self.load_shape()
-
-    def toggle_draw_triangles(self, *args):
-        """Executes internal logic."""
-        self.draw_triangles = not self.draw_triangles
-
-    def toggle_cell_contraction(self, *args):
-        """Executes internal logic."""
-        self.cell_contraction_index = (self.cell_contraction_index + 1) % len(self.cell_contraction_values)
-        self.load_shape()
 
     def toggle_chain_grouping(self, *args):
         """Executes internal logic."""
@@ -194,19 +147,26 @@ class App:
     def load_shape(self):
         """Executes internal logic."""
         current_style = self.model.style if self.model else None
-        blend = self.blend_values[self.blend_index]
-        contraction = self.cell_contraction_values[self.cell_contraction_index]
+        blend = self.state.get_variable("blend").get_value()
+        contraction = self.state.get_variable("cell_contraction").get_value()
+        
+        edge_coloring = self.state.get_variable("edge_mode").get_value()
+        points_mode = self.state.get_variable("points_mode").get_value()
+        vertex_coloring = self.state.get_variable("vertex_mode").get_value()
+        slice_mode = self.state.get_variable("slice_mode").get_value()
+        point_set = self.state.get_variable("point_set").get_value()
+
         if self.shape_name == '24-cell':
             self.model = Cell24Model(blend=blend, cell_contraction=contraction)
         elif self.shape_name == '120-cell':
-            self.model = Cell120Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
-                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
-                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index],
+            self.model = Cell120Model(is_vertex_centered=False, edge_coloring=edge_coloring,
+                                      points_mode=points_mode, vertex_coloring=vertex_coloring,
+                                      blend=blend, slice_mode=slice_mode, point_set=point_set,
                                       cell_contraction=contraction)
         elif self.shape_name == '600-cell':
-            self.model = Cell600Model(is_vertex_centered=False, edge_coloring=self.edge_modes[self.edge_mode_index],
-                                      points_mode=self.points_modes[self.points_mode_index], vertex_coloring=self.vertex_modes[self.vertex_mode_index],
-                                      blend=blend, slice_mode=self.slice_modes[self.slice_mode_index], point_set=self.point_sets[self.point_set_index],
+            self.model = Cell600Model(is_vertex_centered=False, edge_coloring=edge_coloring,
+                                      points_mode=points_mode, vertex_coloring=vertex_coloring,
+                                      blend=blend, slice_mode=slice_mode, point_set=point_set,
                                       cell_contraction=contraction)
         if current_style:
             self.model.style = current_style
@@ -248,31 +208,7 @@ class App:
         width, height = glfw.get_window_size(self.ui.window)
 
         if self.show_help:
-            help_lines = [
-                "POLYTOPE VISUALIZER KEYBOARD CONTROLS",
-                "",
-                "V: Toggle render style (Wireframe/Cylinder)",
-                "T: Toggle shape (24-cell, 120-cell, 600-cell)",
-                "P: Toggle recording to WebP video",
-                "1-6: Set 4D rotation plane (XY, XZ, XW, YZ, YW, ZW)",
-                "A: Increase rotation speed",
-                "Z: Decrease rotation speed",
-                "D: Toggle 4D perspective depth (d-value)",
-                "K: Zoom out",
-                "M: Zoom in",
-                "8: Toggle vertex coloring mode",
-                "9: Toggle edge coloring mode",
-                "0: Toggle points mode (filtering geometry)",
-                "S: Toggle slice mode (cutting planes)",
-                "F: Toggle point set (DFS generation)",
-                "Q: Toggle face opacity (blend)",
-                "B: Toggle drawing of 2D face triangles",
-                "G: Toggle 3D cell contraction (spacing out cells)",
-                "N: Cycle through isolated Boerdijk-Coxeter cell chains",
-                "/: Toggle this Help Screen",
-                "ESC: Quit"
-            ]
-            self.hud.draw(help_lines)
+            self.hud.draw(self.state.get_help_lines())
             return
 
         glMatrixMode(GL_PROJECTION)
@@ -301,16 +237,16 @@ class App:
             plane_indices = self.rotator.modes[self.rotation_plane][0]
             fixed_vertices_indices = {i for i, v in enumerate(self.model.vertices_4d) if abs(v[plane_indices[0]]) < 1e-6 and abs(v[plane_indices[1]]) < 1e-6}
 
-        projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
+        projected_vertices = project_4d_to_3d(self.model.vertices_4d, rotation_matrix, d=self.state.get_variable("d_value").get_value())
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style, volume_dimension=self.camera_distance, fixed_vertices_indices=fixed_vertices_indices, edge_colors=self.model.edge_colors, edge_width_multipliers=self.model.edge_width_multipliers)
 
         # Draw the cell triangles if activated
-        if self.draw_triangles and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
-            projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.d_values[self.d_index])
+        if self.state.get_variable("draw_triangles").get_value() and self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
+            projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, rotation_matrix, d=self.state.get_variable("d_value").get_value())
 
             if self.cell_chain == 0:
                 drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
-            elif hasattr(self.model, 'chain_groupings'):
+            elif self.model.chain_groupings and self.model.chain_grouping_names:
                 group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
                 active_group = self.model.chain_groupings[group_name][self.cell_chain - 1]
                 for chain_idx in active_group:
@@ -332,17 +268,27 @@ class App:
         plane_name = self.rotator.get_plane_name(self.rotation_plane)
         capture_status = f"recording ({self.capture.frame_idx:04d})" if self.capture.recording else "stopped"
 
-        if hasattr(self.model, 'chain_groupings'):
+        if self.model.chain_groupings and self.model.chain_grouping_names:
             group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
             num_groups = len(self.model.chain_groupings[group_name])
             chain_status = f"{self.cell_chain}/{num_groups} ({group_name})" if self.cell_chain > 0 else f"ALL ({group_name})"
         else:
             chain_status = f"{self.cell_chain}/{self.model.num_chains}" if self.cell_chain > 0 else "ALL"
 
+        v_mode = self.state.get_variable("vertex_mode").format_hud()
+        e_mode = self.state.get_variable("edge_mode").format_hud()
+        pset = self.state.get_variable("point_set").format_hud()
+        pmode = self.state.get_variable("points_mode").format_hud()
+        smode = self.state.get_variable("slice_mode").format_hud()
+        blend = self.state.get_variable("blend").format_hud()
+        d_val = self.state.get_variable("d_value").format_hud()
+        tris = 'ON' if self.state.get_variable("draw_triangles").get_value() else 'OFF'
+        c_cont = self.state.get_variable("cell_contraction").format_hud()
+
         hud_lines = [
             f"Shape: {self.shape_name:<8} | Dist: {self.camera_distance:5.2f} | Render: {render_mode:<9} | Rotation: {plane_name:<6} | Speed: {self.rotation_speed_level:2} | FPS: {self.ui.fps:>4} | Capture: {capture_status:<16}",
-            f"Vertex: {self.vertex_modes[self.vertex_mode_index]:<9} | Edge: {self.edge_modes[self.edge_mode_index]:<5} | PtSet: {self.point_sets[self.point_set_index]:<8} | Points: {self.points_modes[self.points_mode_index]:2} | Slice: {self.slice_modes[self.slice_mode_index]:<8} | Blend: {self.blend_values[self.blend_index]:3.1f} | d: {self.d_values[self.d_index]:5.1f}",
-            f"Tris: {'ON' if self.draw_triangles else 'OFF':<3} | CellCont: {self.cell_contraction_values[self.cell_contraction_index]:3.1f} | Chain: {chain_status:<6}"
+            f"Vertex: {v_mode:<9} | Edge: {e_mode:<5} | PtSet: {pset:<8} | Points: {pmode:2} | Slice: {smode:<8} | Blend: {blend:>4} | d: {d_val:>4}",
+            f"Tris: {tris:<3} | CellCont: {c_cont:>4} | Chain: {chain_status:<6}"
         ]
         self.hud.draw(hud_lines)
 
