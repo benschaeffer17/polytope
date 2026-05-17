@@ -1,13 +1,21 @@
-import unittest
-import numpy as np
-import sys
+"""
+Unit tests for topological color sequencing logic.
+"""
+
 import os
+import sys
+import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from models.color_constants import get_scaling_multiplier_by_color, COLOR_SEQUENCE, COLOR_VALUES
+from models.color_constants import (
+    get_scaling_multiplier_by_color,
+    COLOR_SEQUENCE,
+    COLOR_VALUES
+)
 
 class TestColorConstants(unittest.TestCase):
+    """Test suite validating the color scaling and interpolation math."""
     def test_get_scaling_multiplier_by_color(self):
         """
         Test that scaling multiplier correctly interpolates from 0.9 to 1.1 across the color sequence.
@@ -26,7 +34,11 @@ class TestColorConstants(unittest.TestCase):
         previous_mult = 0.0
         for color_name in COLOR_SEQUENCE:
             mult = get_scaling_multiplier_by_color(COLOR_VALUES[color_name])
-            self.assertTrue(mult > previous_mult, f"Multiplier {mult} for {color_name} should be greater than previous {previous_mult}")
+            self.assertTrue(
+                mult > previous_mult,
+                f"Multiplier {mult} for {color_name} should be greater "
+                f"than previous {previous_mult}"
+            )
             previous_mult = mult
 
     def test_get_scaling_multiplier_unmatched_color(self):

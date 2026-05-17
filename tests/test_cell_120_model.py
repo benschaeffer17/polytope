@@ -1,14 +1,19 @@
+"""
+Unit tests for the 120-Cell topological model.
+"""
+
+import os
+import sys
 import unittest
 import numpy as np
 
 # Add the project root to the Python path
-import sys
-import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.cell_120_model import get_120_cell, Cell120Model
 
 class Test120Cell(unittest.TestCase):
+    """Test suite for validating the mathematical generation of the 120-Cell."""
     def test_counts(self):
         """
         Tests that the 120-cell has 600 vertices and 1200 edges.
@@ -60,7 +65,6 @@ class Test120Cell(unittest.TestCase):
         v1, v2 = edges[0]
         dist_sq = np.sum((vertices[v1] - vertices[v2])**2)
 
-        phi = (1 + np.sqrt(5)) / 2
         # The prompt states: edge length should be sqrt(2) / (4*phi^2)
         # But depending on normalization, we might just assert that all edges have the same length.
         # We verify that they all have the same length:

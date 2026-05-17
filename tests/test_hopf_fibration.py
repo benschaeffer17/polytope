@@ -1,14 +1,19 @@
-import unittest
-from collections import Counter
-import sys
+"""
+Unit tests for topological Hopf Fibration clustering in 4D geometries.
+"""
+
 import os
+import sys
+import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from models.cell_120_model import Cell120Model
 from models.cell_600_model import Cell600Model
 from models.cell_24_model import Cell24Model
 
 class TestHopfFibration(unittest.TestCase):
+    """Test suite validating the extraction of discrete Hopf fibers."""
     def test_120_cell_hopf_fibration(self):
         """
         Tests that the 120-cell dynamically clusters into exactly 12 Hopf fibers,
@@ -16,17 +21,23 @@ class TestHopfFibration(unittest.TestCase):
         Adjacent dodecahedra in a chain must share a face (5 vertices).
         """
         model = Cell120Model(cell_coloring="hopf")
+        # pylint: disable=protected-access
         model._generate_triangles()
+        # pylint: enable=protected-access
 
         self.assertEqual(len(model.cell_chains), 12, "120-cell should have exactly 12 chains.")
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 10, "Each 120-cell chain should have exactly 10 cells.")
             # Verify adjacency
-            for k in range(len(chain)):
-                c1 = set(model.cells[chain[k]])
+            for k, current_cell_idx in enumerate(chain):
+                c1 = set(model.cells[current_cell_idx])
                 c2 = set(model.cells[chain[(k+1) % 10]])
                 shared = len(c1.intersection(c2))
-                self.assertEqual(shared, 5, f"120-cell adjacent cells must share a face (5 vertices), but shared {shared}.")
+                self.assertEqual(
+                    shared, 5,
+                    f"120-cell adjacent cells must share a face (5 vertices), "
+                    f"but shared {shared}."
+                )
 
     def test_600_cell_hopf_fibration(self):
         """
@@ -35,19 +46,24 @@ class TestHopfFibration(unittest.TestCase):
         For the equator orbits, adjacent tetrahedra in the chain mathematically share a face (3 vertices).
         """
         model = Cell600Model(cell_coloring="hopf")
+        # pylint: disable=protected-access
         model._generate_triangles()
+        # pylint: enable=protected-access
 
         self.assertEqual(len(model.cell_chains), 20, "600-cell should have exactly 20 chains.")
-        connected_helices_found = 0
 
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 30, "Each 600-cell chain should have exactly 30 cells.")
             # Check if this chain is a perfect equator helix (adjacent cells share faces)
-            for k in range(len(chain)):
-                c1 = set(model.cells[chain[k]])
+            for k, current_cell_idx in enumerate(chain):
+                c1 = set(model.cells[current_cell_idx])
                 c2 = set(model.cells[chain[(k+1) % 30]])
                 shared = len(c1.intersection(c2))
-                self.assertEqual(shared, 3, f"600-cell adjacent cells in a Boerdijk-Coxeter helix must share a face (3 vertices), but shared {shared}.")
+                self.assertEqual(
+                    shared, 3,
+                    f"600-cell adjacent cells in a Boerdijk-Coxeter helix "
+                    f"must share a face (3 vertices), but shared {shared}."
+                )
 
     def test_24_cell_hopf_fibration(self):
         """
@@ -56,17 +72,23 @@ class TestHopfFibration(unittest.TestCase):
         Adjacent octahedra in a chain must share exactly 1 vertex.
         """
         model = Cell24Model(cell_coloring="hopf")
+        # pylint: disable=protected-access
         model._generate_triangles()
+        # pylint: enable=protected-access
 
         self.assertEqual(len(model.cell_chains), 6, "24-cell should have exactly 6 chains.")
         for chain in model.cell_chains:
             self.assertEqual(len(chain), 4, "Each 24-cell chain should have exactly 4 cells.")
             # Verify adjacency
-            for k in range(len(chain)):
-                c1 = set(model.cells[chain[k]])
+            for k, current_cell_idx in enumerate(chain):
+                c1 = set(model.cells[current_cell_idx])
                 c2 = set(model.cells[chain[(k+1) % 4]])
                 shared = len(c1.intersection(c2))
-                self.assertEqual(shared, 1, f"24-cell adjacent cells must share exactly 1 vertex, but shared {shared}.")
+                self.assertEqual(
+                    shared, 1,
+                    f"24-cell adjacent cells must share exactly "
+                    f"1 vertex, but shared {shared}."
+                )
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,7 @@
+"""
+Utility script to generate the golden visual regression baseline images.
+"""
+
 import os
 import sys
 import glfw
@@ -6,13 +10,13 @@ from OpenGL.GL import glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 # Add parent directory to path so we can import from main project
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from visual_configs import CONFIGS
 from main import App
 
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "goldens")
 
-from visual_configs import CONFIGS
-
 def generate_goldens():
+    """Generates and saves the baseline 'golden' images for all configs."""
     if not os.path.exists(GOLDEN_DIR):
         os.makedirs(GOLDEN_DIR)
 
@@ -32,7 +36,9 @@ def generate_goldens():
         app.load_shape()
 
         # Clear buffer
+        # pylint: disable=unsupported-binary-operation
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # pylint: enable=unsupported-binary-operation
 
         # Disable help text for goldens
         app.show_help = False

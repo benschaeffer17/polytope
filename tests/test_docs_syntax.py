@@ -1,8 +1,11 @@
-import os
+"""
+Test suite for deterministic syntax validation of Markdown Mermaid diagrams.
+"""
+
 import re
 import subprocess
-import pytest
 from pathlib import Path
+import pytest
 
 # Regex to find mermaid code blocks
 MERMAID_REGEX = re.compile(r"```mermaid\n(.*?)\n```", re.DOTALL)
@@ -18,7 +21,6 @@ def extract_diagrams(filepath):
     """Yields (diagram_code, line_number) for each mermaid block."""
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-        
     for match in MERMAID_REGEX.finditer(content):
         # Calculate line number by counting newlines before the match
         line_num = content.count('\n', 0, match.start()) + 1
@@ -32,20 +34,18 @@ def test_mermaid_syntax(md_file):
     """
     script_path = Path(__file__).parent / "validate_mermaid.js"
     assert script_path.exists(), f"Validation script missing: {script_path}"
-    
     diagrams = list(extract_diagrams(md_file))
     if not diagrams:
         pytest.skip(f"No Mermaid diagrams found in {md_file.name}")
-        
     for code, line_num in diagrams:
         # Pipe the diagram code into the Node.js validation script
         process = subprocess.run(
             ["node", str(script_path)],
             input=code,
             text=True,
-            capture_output=True
+            capture_output=True,
+            check=False
         )
-        
         # If it fails, print the exact error and fail the test
         assert process.returncode == 0, (
             f"Mermaid syntax error in {md_file.name} (Line {line_num}):\n"

@@ -1,3 +1,7 @@
+"""
+Automated visual regression tests against golden baseline images.
+"""
+
 import os
 import sys
 import pytest
@@ -8,12 +12,11 @@ from OpenGL.GL import glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from visual_configs import CONFIGS
 from main import App
 
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "goldens")
-
-from visual_configs import CONFIGS
-
 @pytest.fixture(scope="session")
 def app_instance():
     """Provides a single headless App instance for all tests to save GL initialization time."""
@@ -23,7 +26,8 @@ def app_instance():
     glfw.terminate()
 
 @pytest.mark.parametrize("config_name,config", CONFIGS.items())
-def test_visual_regression(app_instance, config_name, config):
+def test_visual_regression(app_instance, config_name, config): # pylint: disable=redefined-outer-name
+    """Validates the rendered output matches the golden baseline."""
     golden_path = os.path.join(GOLDEN_DIR, f"{config_name}.png")
 
     assert os.path.exists(golden_path), f"Golden image {golden_path} not found. Run generate_goldens.py first."
@@ -34,8 +38,9 @@ def test_visual_regression(app_instance, config_name, config):
     # Apply configuration
     for key, value in config.items():
         var_name = key.replace('_index', '')
-        if var_name == 'd': var_name = 'd_value'
-        
+        if var_name == 'd':
+            var_name = 'd_value'
+
         if key.endswith('_index') and app_instance.state.get_variable(var_name):
             app_instance.state.get_variable(var_name).current_index = value
         elif key == 'draw_triangles':
@@ -49,7 +54,9 @@ def test_visual_regression(app_instance, config_name, config):
     width, height = glfw.get_window_size(app_instance.ui.window)
 
     # Render
+    # pylint: disable=unsupported-binary-operation
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    # pylint: enable=unsupported-binary-operation
     app_instance.draw()
     glfw.swap_buffers(app_instance.ui.window)
     glfw.poll_events()

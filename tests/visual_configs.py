@@ -1,5 +1,7 @@
-# A dictionary of test configurations for visual regression testing.
-# We test about 10-12 configurations per model, covering different planes, slicing, and topological states.
+"""
+A dictionary of test configurations for visual regression testing.
+We test about 10-12 configurations per model, covering different planes, slicing, and topological states.
+"""
 
 CONFIGS = {
     # ---------------- 600-Cell Tests ----------------

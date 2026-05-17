@@ -1,13 +1,17 @@
-import unittest
-import numpy as np
-import sys
+"""
+Unit tests for the raw base polytope vertex generation.
+"""
+
 import os
+import sys
+import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from polytopes import get_600_cell_vertices, get_600_cell_cells
 
 class TestPolytopes(unittest.TestCase):
+    """Test suite validating raw polytope geometry counts."""
 
     def test_get_600_cell_vertices(self):
         """

@@ -1,13 +1,18 @@
+"""
+Unit tests for the SO(4) quaternion mathematical engine.
+"""
 
+import os
+import sys
 import unittest
 import numpy as np
-import sys
-import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from quaternion import q_mult, order6, order10
 
 class TestQuaternion(unittest.TestCase):
+    """Test suite verifying the strict geometric operations in 4D space."""
 
     def test_order6_pow_6_is_one(self):
         """

@@ -1,15 +1,20 @@
+"""
+Unit tests for the 600-Cell topological model.
+"""
 
+import os
+import sys
 import unittest
 import numpy as np
 
 # Add the project root to the Python path
-import sys
-import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.cell_600_model import get_600_cell, Cell600Model
+from models.color_constants import COLOR_VALUES, COLOR_SEQUENCE
 
 class Test600Cell(unittest.TestCase):
+    """Test suite validating the 600-Cell geometry generation."""
     def test_vertex_count(self):
         """
         Tests that the 600-cell has 120 vertices.
@@ -18,38 +23,47 @@ class Test600Cell(unittest.TestCase):
         self.assertEqual(len(vertices), 120)
 
     def test_points_mode_1(self):
+        """Tests that points_mode=1 yields 1 vertex."""
         model = Cell600Model(points_mode=1)
         self.assertEqual(len(model.vertices_4d), 1)
 
     def test_points_mode_2(self):
+        """Tests that points_mode=2 yields 13 vertices."""
         model = Cell600Model(points_mode=2)
         self.assertEqual(len(model.vertices_4d), 13)
 
     def test_points_mode_3(self):
+        """Tests that points_mode=3 yields 45 vertices."""
         model = Cell600Model(points_mode=3)
         self.assertEqual(len(model.vertices_4d), 45)
 
     def test_points_mode_4(self):
+        """Tests that points_mode=4 yields 87 vertices."""
         model = Cell600Model(points_mode=4)
         self.assertEqual(len(model.vertices_4d), 87)
 
     def test_points_mode_5(self):
+        """Tests that points_mode=5 yields 119 vertices."""
         model = Cell600Model(points_mode=5)
         self.assertEqual(len(model.vertices_4d), 119)
 
     def test_points_mode_6(self):
+        """Tests that points_mode=6 yields 120 vertices."""
         model = Cell600Model(points_mode=6)
         self.assertEqual(len(model.vertices_4d), 120)
 
     def test_points_mode_7(self):
+        """Tests that points_mode=7 yields 120 vertices."""
         model = Cell600Model(points_mode=7)
         self.assertEqual(len(model.vertices_4d), 120)
 
     def test_points_mode_8(self):
+        """Tests that points_mode=8 yields 120 vertices."""
         model = Cell600Model(points_mode=8)
         self.assertEqual(len(model.vertices_4d), 120)
 
     def test_points_mode_9(self):
+        """Tests that points_mode=9 yields 120 vertices."""
         model = Cell600Model(points_mode=9)
         self.assertEqual(len(model.vertices_4d), 120)
 
@@ -60,9 +74,7 @@ class Test600Cell(unittest.TestCase):
         """
         model = Cell600Model(edge_coloring="hopf")
 
-        from models.color_constants import COLOR_VALUES, COLOR_SEQUENCE
-
-        color_counts = {name: 0 for name in COLOR_VALUES.keys()}
+        color_counts = {name: 0 for name in COLOR_VALUES}
 
         for edge_color in model.edge_colors:
             # Find the exact match in the COLOR_VALUES
@@ -71,14 +83,14 @@ class Test600Cell(unittest.TestCase):
                     color_counts[name] += 1
                     break
 
-        expected_counts = {name: 0 for name in COLOR_VALUES.keys()}
+        expected_counts = {name: 0 for name in COLOR_VALUES}
         for i in range(12):
             color_name = COLOR_SEQUENCE[i % len(COLOR_SEQUENCE)]
             expected_counts[color_name] += 10
 
         print("Color counts:", color_counts)
 
-        for name in COLOR_VALUES.keys():
+        for name in COLOR_VALUES:
             self.assertEqual(
                 color_counts[name],
                 expected_counts[name],
@@ -110,7 +122,7 @@ class Test600Cell(unittest.TestCase):
         Tests that the 600-cell has exactly 2400 triangles (600 cells * 4 triangles).
         """
         model = Cell600Model()
-        model._generate_triangles()
+        model._generate_triangles() # pylint: disable=protected-access
         self.assertEqual(len(model.triangles), 2400)
 
 if __name__ == '__main__':
