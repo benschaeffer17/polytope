@@ -1,0 +1,33 @@
+{
+  "name": "polytope",
+  "version": "1.0.0",
+  "description": "This project is an advanced, high-performance visualizer for 4D polytopes (24-cell, 120-cell, and 600-cell) using Python, OpenGL, and GLFW. It is uniquely designed to mathematically extract and visualize the discrete [Hopf Fibration](https://en.wikipedia.org/wiki/Hopf_fibration), rendering the spectacular intertwined geometries of 4D space down to 3D.",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.15.0",
+    "mermaid": "^11.15.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benschaeffer17/polytope.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/benschaeffer17/polytope/issues"
+  },
+  "homepage": "https://github.com/benschaeffer17/polytope#readme",
+  "dependencies": {
+    "dompurify": "^3.4.4",
+    "jsdom": "^29.1.1"
+  }
+}

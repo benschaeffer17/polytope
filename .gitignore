@@ -65,3 +65,4 @@ ehthumbs.db
 Thumbs.db
 polymovie/
 *.mp4
+node_modules/
