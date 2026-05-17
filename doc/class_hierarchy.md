@@ -69,7 +69,7 @@ graph TD
 
     subgraph Models
         D[models.Model]
-        E((models.Cell*Model))
+        E(("models.Cell*Model"))
     end
     
     subgraph Data
@@ -85,6 +85,6 @@ graph TD
     A -- "Calls" --> H
     I -- "Registers" --> J
     I -- "Proxies Input" --> B
-    D <|-- E
+    D -. "Inherited by" .-> E
     A -- "Creates" --> E
 ```
