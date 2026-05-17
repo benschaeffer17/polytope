@@ -36,8 +36,11 @@ These classes are used to define the visual style of the rendered polytopes.
 
 ## Widget Classes
 
+*   `widgets.state.UIStateManager`: Centralized declarative controller for all configuration variables and keybind routing.
+*   `widgets.state.UIStateVariable`: Represents an isolated configurable property (e.g., render mode, depth value) with its own cycle limits, keybinding, and help text.
+*   `widgets.state.UIAction`: Represents a stateless execution command (e.g., Zoom In, Exit).
 *   `widgets.capture.Capture`: This widget allows capturing the current frame as an image file.
-*   `widgets.ui.HeadsUpDisplay`: Displays text information on the screen.
+*   `widgets.ui.HeadsUpDisplay`: Displays text information on the screen, now populated dynamically via the `UIStateManager`.
 
 ## UML Diagrams
 
@@ -52,6 +55,11 @@ graph TD
     subgraph UI
         B[widgets.ui.UserInterface]
         F[widgets.ui.HeadsUpDisplay]
+    end
+    
+    subgraph State
+        I[widgets.state.UIStateManager]
+        J[widgets.state.UIStateVariable]
     end
 
     subgraph Navigation
@@ -68,12 +76,15 @@ graph TD
         H[polytopes.py]
     end
 
-    A -- "Uses" --> B
+    A -- "Instantiates" --> B
+    A -- "Instantiates" --> I
     A -- "Uses" --> C
     A -- "Uses" --> D
     A -- "Uses" --> F
     A -- "Uses" --> G
     A -- "Calls" --> H
+    I -- "Registers" --> J
+    I -- "Proxies Input" --> B
     D <|-- E
     A -- "Creates" --> E
 ```

@@ -1,112 +1,114 @@
 # Building Visualization Applications
 
-This document describes how to use the classes and functions in this project to build your own polytope visualization applications. The `main.py` file serves as a good example of how to do this.
+This document explains the architectural principles of the Polytope Visualizer engine and demonstrates how developers can leverage its decoupled subsystems to build custom 4D rendering applications. 
 
-## Core Components
+Rather than tightly coupling mathematics, rendering, and state, the engine relies on strict separation of concerns. This design ensures that mathematical models remain pure, rendering loops remain blisteringly fast, and user interface state remains 100% testable.
 
-The visualization system is built around a few core components:
+## Core Architectural Subsystems (The "What" and the "Why")
 
-*   **`UserInterface`**: Creates the window and handles user input.
-*   **`Navigator`**: Handles 3D rotation of the scene with the mouse.
-*   **`Rotator`**: Handles 4D rotation of the polytope.
-*   **`Model` Classes**: The `models` directory contains classes that represent the polytopes. These classes encapsulate the 4D vertex and edge data, as well as the coloring and styling information.
-*   **Projection**: The `project_4d_to_3d` function projects the 4D data into 3D space that can be rendered.
-*   **Drawing**: The `draw` function in `viz.drawing` handles the actual OpenGL rendering of the points and lines.
-*   **Widgets**: The `widgets` directory contains additional components that can be added to the visualization, such as a frame capture tool and a heads-up display.
+The Polytope engine isolates its subsystems into specific layers. By keeping these boundaries strict, developers can write pure-Python unit tests for application state without initializing a heavyweight OpenGL context.
 
-## Steps to Build a Visualization
+*   **`UserInterface` (Native Layer)**: Wraps the raw GLFW window and OpenGL context. It captures hardware input (mouse, keyboard) but contains no business logic.
+*   **`UIStateManager` (Controller Layer)**: The heart of the application state. It acts as a central registry, translating raw native keystrokes into declarative `UIStateVariable` modifications. **Why decouple this?** By extracting state from the GLFW window, the application logic becomes fully headless. You can unit test a 4D rotation sequence in milliseconds.
+*   **`Navigator` and `Rotator` (Kinematic Layer)**: Independent modules that manage the $SO(3)$ camera angles and $SO(4)$ hyper-rotations, entirely insulated from the geometry they manipulate.
+*   **`Model` Geometries (Data Layer)**: The `models` directory houses the mathematical engines (e.g., `Cell120Model`). These classes encapsulate massive 4D vertex arrays and topological structures but remain blissfully unaware of how they are rendered or controlled.
 
-Here is a step-by-step guide to creating a visualization application.
+## Constructing a Custom Visualizer
 
-### 1. Create an Application Class
+The following tutorial demonstrates how to orchestrate these decoupled layers into a functioning application.
 
-Create a main class to hold your application's state and logic.
+### 1. Establish the Controller and Native Window
 
-```python
-class App:
-    def __init__(self):
-        # ... initialization ...
-
-    def draw(self):
-        # ... rendering ...
-
-    def run(self):
-        # ... main loop ...
-```
-
-### 2. Initialize Core Components
-
-In the `__init__` method of your `App` class, you should:
-
-*   Create an instance of `UserInterface`.
-*   Create an instance of `Navigator`, passing it the `UserInterface` instance.
-*   Register your `draw` method with the `UserInterface` instance.
-*   Create an instance of a `Model` subclass (e.g., `Cell24Model`).
-*   Initialize any desired widgets, such as the `Capture` widget.
+Begin by instantiating the core infrastructure. The `UIStateManager` requires a reference to the `UserInterface` so it can proxy the raw hardware events into its pure-Python state machine.
 
 ```python
+import glfw
 from widgets.ui import UserInterface
+from widgets.state import UIStateManager, UIStateVariable
 from navigation.navigator import Navigator
 from models import Cell24Model
 from widgets.capture import Capture
 
 class App:
     def __init__(self):
-        self.ui = UserInterface(title="My Visualizer")
-        self.nav = Navigator(self.ui)
-        self.ui.register_draw_function(self.draw)
+        # 1. Initialize the native GLFW window wrapping
+        self.ui = UserInterface(title="My Custom Visualizer")
         
-        self.model = Cell24Model()
+        # 2. Initialize the Headless State Controller
+        self.state = UIStateManager(self.ui)
+        
+        # 3. Attach Kinematics
+        self.nav = Navigator(self.ui)
+        
+        # 4. Register the Main Render Loop
+        self.ui.register_draw_function(self.draw)
+```
+
+### 2. Declarative State Registration (The Registry Pattern)
+
+Instead of scattering `toggle_X()` methods across your application, register configuration variables directly into the `UIStateManager`. 
+
+**Why use the Registry Pattern?** Defining state declaratively solves the "Triple Maintenance Problem." A single `register()` call automatically tracks the variable bounds, binds the hardware key, and dynamically injects the command into the interactive HUD Help Menu.
+
+```python
+        # Register an isolated state variable for face opacity
+        self.state.register(UIStateVariable(
+            name="blend", 
+            values=[0.2, 0.4, 0.6, 0.8, 1.0], 
+            keybind=glfw.KEY_Q, 
+            key_name="Q", 
+            description="Toggle face opacity (blend)", 
+            default_index=4
+        ))
+        
+        # Inject the state into the pure mathematical model
+        self.model = Cell24Model(blend=self.state.get_variable("blend").get_value())
         self.capture = Capture(self.ui)
 ```
 
-### 3. Implement the `draw` method
+### 3. The Pure Render Loop
 
-The `draw` method is where all the rendering happens. It will be called on every frame. In this method, you should:
-
-*   Apply the rotation from the `Navigator`.
-*   Project your 4D vertices into 3D space.
-*   Call the `drawing.draw` function to render the polytope.
+The `draw` method executes every frame. Because the state and math are decoupled, this loop remains highly optimized. You pull the current rotation, project the pure 4D data into 3D, and hand it to the stateless `drawing.py` backend.
 
 ```python
 import viz.drawing as drawing
 from polytopes import project_4d_to_3d
 
-# ... inside the App class ...
     def draw(self):
-        # Apply 3D rotation from mouse
+        # Apply 3D rotation from the Navigator
         self.nav.apply_rotation()
         
-        # Get projected 3D vertices
+        # Project 4D vertices down to 3D space
         projected_vertices = project_4d_to_3d(self.model.vertices_4d, self.angle_4d)
         
-        # Draw the polytope wireframe/vertices
+        # Dispatch to the stateless OpenGL backend
         drawing.draw(projected_vertices, self.model.edges, self.model.colors, self.model.style)
         
-        # Draw the 3D cell faces, utilizing topological grouping if available
+        # Handle Topological Groupings (if SVD has extracted the Hopf fibers)
         if self.model.triangle_vertices_4d is not None and len(self.model.triangle_vertices_4d) > 0:
-            projected_triangle_vertices = project_4d_to_3d(self.model.triangle_vertices_4d, self.angle_4d)
+            projected_tris = project_4d_to_3d(self.model.triangle_vertices_4d, self.angle_4d)
+            
             if hasattr(self.model, 'chain_groupings'):
-                # Extract the indices of the active topological group
-                group_name = self.model.chain_grouping_names[self.chain_grouping_mode]
-                active_group = self.model.chain_groupings[group_name][self.cell_chain - 1]
+                # Dynamically poll the UIStateManager for the active topological mode
+                group_name = self.model.chain_grouping_names[self.state.get_variable("grouping_mode").get_value()]
+                active_group = self.model.chain_groupings[group_name][self.state.get_variable("cell_chain").get_value() - 1]
+                
                 for chain_idx in active_group:
                     tris_to_draw, _, colors_to_draw = self.model.triangles_by_chain[chain_idx]
-                    drawing.draw_triangles(projected_triangle_vertices, tris_to_draw, colors_to_draw, normals=None)
+                    drawing.draw_triangles(projected_tris, tris_to_draw, colors_to_draw, normals=None)
             else:
-                drawing.draw_triangles(projected_triangle_vertices, self.model.triangles, self.model.triangle_colors, normals=None)
+                drawing.draw_triangles(projected_tris, self.model.triangles, self.model.triangle_colors, normals=None)
 ```
 
-### 4. Implement the `run` method
+### 4. Application Execution
 
-The `run` method should perform any initial OpenGL setup and then start the main loop by calling the `run` method of your `UserInterface` instance.
+Initialize the OpenGL context settings, and surrender control to the `UserInterface` event loop.
 
 ```python
 from OpenGL.GL import *
 
-# ... inside the App class ...
     def run(self):
-        # Initial OpenGL setup
+        # Establish base OpenGL properties
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -114,37 +116,14 @@ from OpenGL.GL import *
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
+        # Trigger the GLFW blocking loop
         self.ui.run()
-```
 
-### 5. Run the Application
-
-Finally, create an instance of your `App` class and call its `run` method.
-
-```python
 if __name__ == '__main__':
     app = App()
     app.run()
 ```
 
-## Customization
+## Architectural Summary
 
-You can customize the appearance of the visualization by modifying the `Style` object on the `model`. For example, you can register a keyboard callback to toggle the drawing style:
-
-```python
-# In __init__
-self.ui.register_keyboard_callback(glfw.KEY_V, self.toggle_style)
-
-# A new method in your App class
-def toggle_style(self, *args):
-    self.model.style.toggle_style()
-```
-Now, pressing the 'V' key will switch between simple points and lines, and lit spheres and cylinders. You can also use widgets to add functionality. For example, the `Capture` widget saves a screenshot when a key is pressed.
-
-## Interactive Help Menu & Groupings
-
-The visualizer supports a built-in help overlay that can intercept and consume keystrokes. Pressing **`/`** will display an on-screen list of all registered keyboard commands.
-
-If topological `chain_groupings` have been calculated by the `Model` (using SVD extraction of the discrete Hopf fibration), you can use the following keys to explore them:
-- **`H`**: Cycle the `chain_grouping_mode` (e.g., Single, Antipodal Pairs, Toroidal Bundles).
-- **`N`**: Cycle through the active groups of the current topological mode.
+By pushing side effects (window generation, hardware polling) to the absolute edges of the architecture, the Polytope engine ensures that its core—the mathematical extraction of the Hopf fibration—remains stable, testable, and deeply extensible.

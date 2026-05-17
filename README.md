@@ -2,6 +2,11 @@
 
 This project is an advanced, high-performance visualizer for 4D polytopes (24-cell, 120-cell, and 600-cell) using Python, OpenGL, and GLFW. It is uniquely designed to mathematically extract and visualize the discrete [Hopf Fibration](https://en.wikipedia.org/wiki/Hopf_fibration), rendering the spectacular intertwined geometries of 4D space down to 3D.
 
+## Architecture Documentation Gateway
+For an in-depth understanding of the engine's structure and how to build upon it, please consult the core documentation:
+- **[Class Hierarchy](doc/class_hierarchy.md)**: A complete UML breakdown of the `UIStateManager`, `Model` geometries, and `viz` pipelines.
+- **[Building Visualizations](doc/building_visualizations.md)**: A guide to constructing new 4D polytope visualizer apps using the decoupled engine components.
+
 ## The Mathematics of the 4D Hopf Fibration
 
 In topology, the continuous Hopf fibration describes how the 3-sphere ($S^3$) can be perfectly partitioned into a bundle of non-intersecting great circles (fibers) that map onto a 2-sphere ($S^2$). Because the regular 4-polytopes tile the surface of the 3-sphere, their discrete cells can be linked together into physical "chains" that represent a rigid, discrete analog of the continuous Hopf fibration.
