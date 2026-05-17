@@ -24,16 +24,34 @@ During geometry generation, the visualizer uses [Singular Value Decomposition (S
 - **Toroidal Bundles**: The visualizer groups fibers by their isoclinic angles, revealing them as interlocked, concentric [Clifford tori](https://en.wikipedia.org/wiki/Clifford_torus).
 - **Antipodal Pairs**: The visualizer perfectly pairs chains that are mathematically orthogonal ($90^{\circ}$ apart in 4D space), representing the opposite poles of the fibration map.
 
-## Installation & Running
+## Installation & Architecture
 
-1. **Install dependencies:**
-   You will need `numpy`, `PyOpenGL`, and `glfw`. 
+The architecture of this repository draws a strict line between **Runtime Dependencies** (required to run the application) and **Development Dependencies** (required for CI/CD and testing).
+
+### 1. Runtime Setup (Python)
+The core application is a pure Python engine.
+1. **Install Runtime Dependencies:**
+   Requires `numpy`, `PyOpenGL`, and `glfw`.
    ```bash
    pip install -r requirements.txt
    ```
-2. **Run the main script:**
+2. **Run the Visualizer:**
    ```bash
    python main.py
+   ```
+
+### 2. Development Setup (Node.js & Pytest)
+To enforce documentation integrity without muddying the Python runtime, the testing infrastructure is encapsulated in the `tests/` directory.
+
+We utilize a deterministic "Docs-as-Code" methodology. Because the official Mermaid parsing library is native to JavaScript, we utilize a lightweight Node.js wrapper to statically parse our Markdown diagrams' Abstract Syntax Trees (AST) in memory. This guarantees that syntax errors are caught deterministically by Pytest before merging, without requiring expensive probabilistic AI reviews or heavyweight headless browsers.
+
+1. **Install Development Dependencies:**
+   ```bash
+   cd tests && npm install
+   ```
+2. **Run the Test Suite:**
+   ```bash
+   python -m pytest tests/
    ```
 
 ## Advanced Visualization Features
